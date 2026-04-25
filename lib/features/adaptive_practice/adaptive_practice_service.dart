@@ -53,9 +53,14 @@ class AdaptivePracticeService {
   Future<List<PracticeQuestion>> fetchPracticeQuestions({
     String? chapterId,
     String? lessonId,
+    String mode = 'practice',
     int limit = 20,
   }) async {
-    if ((chapterId == null || chapterId.trim().isEmpty) &&
+    final normalizedMode = mode.trim().toLowerCase();
+    final needsScopedFilter = normalizedMode == 'practice';
+
+    if (needsScopedFilter &&
+        (chapterId == null || chapterId.trim().isEmpty) &&
         (lessonId == null || lessonId.trim().isEmpty)) {
       throw const AdaptivePracticeFailure(
         'Please provide chapterId or lessonId to fetch practice questions.',
@@ -71,9 +76,7 @@ class AdaptivePracticeService {
         query = query.where('chapterId', isEqualTo: chapterId.trim());
       }
 
-      query = query.where('status', isEqualTo: 'active').limit(limit);
-
-      final snapshot = await query.get();
+      final snapshot = await query.limit(limit).get();
       final questions = <PracticeQuestion>[];
 
       for (final doc in snapshot.docs) {
@@ -83,6 +86,11 @@ class AdaptivePracticeService {
           final options = _parseOptions(data['options']);
 
           if (stem == null || stem.isEmpty || options.isEmpty) {
+            continue;
+          }
+
+          final status = (data['status'] as String?)?.trim().toLowerCase();
+          if (status != null && status.isNotEmpty && status != 'active') {
             continue;
           }
 

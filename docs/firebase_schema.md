@@ -3,6 +3,7 @@
     fullName
     examTarget
     locale
+    grade               <-- Default user grade (10th/11th/12th)
   settings: (theme, layout, etc.)
   entitlement: (tier, trial status, etc.)
   global_stats:           <-- FRIEND'S ADDITION (1-read Dashboard)
@@ -28,6 +29,7 @@
 
 3. COLLECTION: /users/{uid}/sessions/{sessionId} (Friend's "user_activity")
   mode (mock/adaptive)
+  grade                <-- Grade level used for this session
   startedAt
   state (in_progress/submitted)
   score: (total, correct, wrong)

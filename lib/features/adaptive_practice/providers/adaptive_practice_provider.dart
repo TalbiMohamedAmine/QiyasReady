@@ -25,6 +25,8 @@ class AdaptivePracticeState {
     this.errorMessage,
     this.chapterId,
     this.lessonId,
+    this.selectedGrade = '10th Grade',
+    this.selectedMode = 'practice',
   });
 
   final PracticeLoadStatus status;
@@ -37,6 +39,8 @@ class AdaptivePracticeState {
   final String? errorMessage;
   final String? chapterId;
   final String? lessonId;
+  final String selectedGrade;
+  final String selectedMode;
 
   PracticeQuestion? get currentQuestion {
     if (questions.isEmpty || currentQuestionIndex < 0) {
@@ -81,6 +85,8 @@ class AdaptivePracticeState {
     String? chapterId,
     String? lessonId,
     bool clearScope = false,
+    String? selectedGrade,
+    String? selectedMode,
   }) {
     return AdaptivePracticeState(
       status: status ?? this.status,
@@ -93,6 +99,8 @@ class AdaptivePracticeState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       chapterId: clearScope ? null : (chapterId ?? this.chapterId),
       lessonId: clearScope ? null : (lessonId ?? this.lessonId),
+      selectedGrade: selectedGrade ?? this.selectedGrade,
+      selectedMode: selectedMode ?? this.selectedMode,
     );
   }
 }
@@ -117,6 +125,8 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
   Future<void> loadQuestions({
     String? chapterId,
     String? lessonId,
+    String selectedGrade = '10th Grade',
+    String selectedMode = 'practice',
     int? questionTimeLimitSec,
     int limit = 20,
   }) async {
@@ -126,12 +136,15 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
       chapterId: chapterId,
       lessonId: lessonId,
       clearScope: false,
+      selectedGrade: selectedGrade,
+      selectedMode: selectedMode,
     );
 
     try {
       final questions = await _service.fetchPracticeQuestions(
         chapterId: chapterId,
         lessonId: lessonId,
+        mode: selectedMode,
         limit: limit,
       );
 
