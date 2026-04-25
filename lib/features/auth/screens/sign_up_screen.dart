@@ -125,7 +125,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     const SizedBox(height: 20),
                     _buildTermsCheckbox(),
                     const SizedBox(height: 24),
-                    _buildGoogleButton(),
+                    _buildGoogleButton(isLoading: actionState.isLoading),
                     const SizedBox(height: 12),
                     _buildSocialRow(),
                     const SizedBox(height: 24),
@@ -291,10 +291,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildGoogleButton() {
+  Widget _buildGoogleButton({required bool isLoading}) {
     return _OutlinedActionButton(
       onTap: () {
-        // TODO: implement Google sign-in in auth_provider.dart
+        if (isLoading) {
+          return;
+        }
+
+        _handleGoogleSignIn();
       },
       height: 52,
       borderRadius: 8,
@@ -537,6 +541,22 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       _passwordController.clear();
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (!_agreedToTerms) {
+      _showSnackBar('Please agree to the Terms of Service to continue.');
+      return;
+    }
+
+    final success =
+        await ref.read(authControllerProvider.notifier).signInWithGoogle();
+
+    if (!mounted || !success) {
+      return;
+    }
+
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _handleLogin() {
