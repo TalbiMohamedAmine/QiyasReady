@@ -1,3 +1,5 @@
+# Ensure gitignore itself is always tracked
+!/.gitignore
 # --- Flutter / Dart ---
 .dart_tool/
 .flutter-plugins
