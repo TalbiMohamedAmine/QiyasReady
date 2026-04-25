@@ -1,45 +1,62 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# --- Flutter / Dart ---
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
-/build/
-/coverage/
+build/
+# If you use code generation (like Freezed or Lark), ignore these
+*.g.dart
+*.freezed.dart
 
-# Symbolication related
-app.*.symbols
+# --- Firebase & Secret Keys ---
+# Ignore your configuration files to prevent leaking project IDs/API keys
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+lib/firebase_options.dart
 
-# Obfuscation related
-app.*.map.json
+# --- Environment Variables ---
+.env
+.env.*
+secret.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# --- Android ---
+.gradle/
+local.properties
+*.keystore
+*.jks
+captures/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+
+# --- iOS ---
+*.moved-aside
+*.swp
+*.lock
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+DerivedData/
+Pods/
+.build/
+ServiceDeviceRepo/
+*.moved-aside
+Podfile.lock
+
+# --- IDEs & OS Tools ---
+.vscode/
+.idea/
+*.iml
+*.iws
+.history/
+.DS_Store
+Thumbs.db
+
+# --- Log files ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
