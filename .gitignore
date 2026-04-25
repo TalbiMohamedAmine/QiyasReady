@@ -14,7 +14,6 @@ build/
 # Ignore your configuration files to prevent leaking project IDs/API keys
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
-lib/firebase_options.dart
 
 # --- Environment Variables ---
 .env
