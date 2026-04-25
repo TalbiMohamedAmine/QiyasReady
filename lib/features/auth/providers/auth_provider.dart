@@ -103,6 +103,28 @@ class AuthController extends StateNotifier<AuthActionState> {
     }
   }
 
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final credential = await _authService.signInWithGoogle();
+      if (credential == null) {
+        state = state.copyWith(isLoading: false, clearError: true);
+        return false;
+      }
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google sign-in failed. Please try again.',
+      );
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }
