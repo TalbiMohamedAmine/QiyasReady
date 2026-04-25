@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProfileDashboardScreen extends StatelessWidget {
+import '../../auth/providers/auth_provider.dart';
+
+class ProfileDashboardScreen extends ConsumerWidget {
   const ProfileDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final actionState = ref.watch(authControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,6 +147,51 @@ class ProfileDashboardScreen extends StatelessWidget {
                               onTap: () {},
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: actionState.isLoading
+                                ? null
+                                : () {
+                                    ref
+                                        .read(authControllerProvider.notifier)
+                                        .signOut();
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              side: BorderSide(color: colorScheme.outline),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            icon: actionState.isLoading
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.logout_outlined),
+                            label: Text(
+                              actionState.isLoading
+                                  ? 'Signing out...'
+                                  : 'Logout',
+                            ),
+                          ),
+                          if (actionState.errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              actionState.errorMessage!,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: colorScheme.error),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ],
                       ),
                     ),
