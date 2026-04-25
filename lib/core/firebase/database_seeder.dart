@@ -19,7 +19,8 @@ class DatabaseSeeder {
     try {
       final batch = firestore.batch();
 
-      final questionRef = firestore.collection('questions').doc('seed_question_001');
+      final questionRef =
+          firestore.collection('questions').doc('seed_question_001');
       batch.set(
         questionRef,
         {
@@ -35,8 +36,7 @@ class DatabaseSeeder {
             {'id': 'd', 'text': '24'},
           ],
           'correctOptionId': 'b',
-          'static_explanation':
-              'Add ones and tens normally: 12 + 8 = 20.',
+          'static_explanation': 'Add ones and tens normally: 12 + 8 = 20.',
           'ai_explanation_prompt':
               'Explain step-by-step how to solve 12 + 8 for a beginner.',
           'avgSolveSec': 60,
