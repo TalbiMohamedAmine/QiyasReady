@@ -101,7 +101,8 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
 
-final adaptivePracticeServiceProvider = Provider<AdaptivePracticeService>((ref) {
+final adaptivePracticeServiceProvider =
+    Provider<AdaptivePracticeService>((ref) {
   final firestore = ref.watch(firestoreProvider);
   return AdaptivePracticeService(firestore: firestore);
 });
@@ -263,8 +264,9 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
   }
 }
 
-final adaptivePracticeControllerProvider = StateNotifierProvider<
-    AdaptivePracticeController, AdaptivePracticeState>((ref) {
+final adaptivePracticeControllerProvider =
+    StateNotifierProvider<AdaptivePracticeController, AdaptivePracticeState>(
+        (ref) {
   final service = ref.watch(adaptivePracticeServiceProvider);
   return AdaptivePracticeController(service);
 });

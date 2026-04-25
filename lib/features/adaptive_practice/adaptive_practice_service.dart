@@ -95,7 +95,8 @@ class AdaptivePracticeService {
               chapterId: (data['chapterId'] as String?) ?? '',
               lessonId: (data['lessonId'] as String?) ?? '',
               avgSolveSec: _parseAvgSolveSec(data['avgSolveSec']),
-              explanationSteps: _parseExplanationSteps(data['explanationSteps']),
+              explanationSteps:
+                  _parseExplanationSteps(data['explanationSteps']),
             ),
           );
         } catch (_) {

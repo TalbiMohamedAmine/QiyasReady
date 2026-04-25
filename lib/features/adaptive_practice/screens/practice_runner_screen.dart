@@ -108,9 +108,7 @@ class PracticeRunnerScreen extends ConsumerWidget {
           return _ErrorView(
             message: 'No active question available. Restart the practice.',
             onRetry: () {
-              ref
-                  .read(adaptivePracticeControllerProvider.notifier)
-                  .reset();
+              ref.read(adaptivePracticeControllerProvider.notifier).reset();
             },
           );
         }
