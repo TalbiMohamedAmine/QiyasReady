@@ -1,0 +1,115 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../auth_service.dart';
+
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
+  return FirebaseAuth.instance;
+});
+
+final authServiceProvider = Provider<AuthService>((ref) {
+  final auth = ref.watch(firebaseAuthProvider);
+  return AuthService(auth: auth);
+});
+
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  final service = ref.watch(authServiceProvider);
+  return service.authStateChanges();
+});
+
+class AuthActionState {
+  const AuthActionState({
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  final bool isLoading;
+  final String? errorMessage;
+
+  AuthActionState copyWith({
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return AuthActionState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+class AuthController extends StateNotifier<AuthActionState> {
+  AuthController(this._authService) : super(const AuthActionState());
+
+  final AuthService _authService;
+
+  Future<bool> signIn({required String email, required String password}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authService.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Sign-in failed. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> signUp({required String email, required String password}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authService.signUpWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Sign-up failed. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> signOut() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authService.signOut();
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Sign-out failed. Please try again.',
+      );
+      return false;
+    }
+  }
+
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
+}
+
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthActionState>((ref) {
+  final authService = ref.watch(authServiceProvider);
+  return AuthController(authService);
+});
