@@ -9,6 +9,7 @@ import '../../../core/security/security_overlay.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../models/global_mistake.dart';
 import '../repositories/global_analytics_service.dart';
+import '../../subscriptions/widgets/feature_lock.dart';
 
 class GlobalReportScreen extends ConsumerStatefulWidget {
   const GlobalReportScreen({super.key});
@@ -208,9 +209,11 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                           ),
                         ),
                       )
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: SecureContentWrapper(
+                    : FeatureLock(
+                        lockedText: 'Upgrade to Basic to access the Common Mistakes Report.',
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: SecureContentWrapper(
                           child: ListView(
                             padding: const EdgeInsets.all(16),
                             children: [
@@ -242,6 +245,7 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                           ),
                         ),
                       ),
+                    ),
           ),
         ),
       ),
