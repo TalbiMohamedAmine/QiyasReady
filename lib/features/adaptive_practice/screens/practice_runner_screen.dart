@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/security/exam_security_service.dart';
@@ -217,17 +218,20 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                         isCorrect: isCorrect,
                         isLoadingAI: _isLoadingAI,
                         aiExplanation: _aiExplanation,
-                        onAskAiTutor:
-                            isCorrect || _isLoadingAI || correctOption == null
-                                ? null
-                                : () {
-                                    _askAiTutor(
-                                      questionText: question.stem,
-                                      correctAnswer: correctOption.text,
-                                      userAnswer: selectedOption.text,
-                                      grade: state.selectedGrade,
-                                    );
-                                  },
+                        onAskAiTutor: isCorrect ||
+                                _isLoadingAI ||
+                                selectedOption == null ||
+                                correctOption == null
+                            ? null
+                            : () {
+                                _askAiTutor(
+                                  questionText: question.stem,
+                                  correctAnswer: correctOption.text,
+                                  userAnswer: selectedOption.text,
+                                  grade: state.selectedGrade,
+                                  isCorrect: isCorrect,
+                                );
+                              },
                       ),
                     ],
                   ],
@@ -278,6 +282,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
     required String correctAnswer,
     required String userAnswer,
     required String grade,
+    required bool isCorrect,
   }) async {
     setState(() {
       _isLoadingAI = true;
@@ -290,6 +295,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
             correctAnswer: correctAnswer,
             userAnswer: userAnswer,
             grade: grade,
+            isCorrect: isCorrect,
           );
 
       if (!mounted) {
@@ -410,9 +416,15 @@ class _AnswerFeedbackCard extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFB5CCF5)),
               ),
               padding: const EdgeInsets.all(12),
-              child: Text(
-                aiExplanation!,
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: MarkdownBody(
+                  data: aiExplanation!,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
               ),
             ),
           ],

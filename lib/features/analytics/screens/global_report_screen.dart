@@ -148,6 +148,7 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
             correctAnswer: mistake.correctAnswer,
             userAnswer: mistake.popularWrongAnswer,
             grade: 'Grade 10',
+            isCorrect: false,
           );
 
       if (!mounted) {

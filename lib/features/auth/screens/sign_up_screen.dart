@@ -4,7 +4,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../providers/auth_provider.dart';
 import 'sign_in_screen.dart';
+import '../../profile/screens/profile_dashboard_screen.dart';
+import '../../subscriptions/screens/paywall_screen.dart';
+import '../../subscriptions/providers/subscriptions_provider.dart';
 
+// ─── Colors ──────────────────────────────────────────────────────────────────
 class _SignUpColors {
   static const primaryBlue = Color(0xFF1A6BFF);
   static const background = Color(0xFFFFFFFF);
@@ -17,8 +21,36 @@ class _SignUpColors {
   static const requiredBadgeText = Color(0xFF9E9E9E);
 }
 
+// ─── Plan features ───────────────────────────────────────────────────────────
+const _kPlanFeatures = {
+  'Basic': [
+    'Unlimited Mock Exams',
+    'Practice by Section/Chapter',
+    'Full Performance Analytics',
+    'AI Study Plan',
+    'Step-by-step Answers',
+    'Goal Setting & Reminders',
+  ],
+  'Expert': [
+    'Everything in Basic',
+    'AI Hints (no spoilers)',
+    'Customized Tests',
+    'Offline Mode',
+    'Common Mistakes Report',
+    'Adaptive Fonts & Themes',
+    'Gamification & Leaderboards',
+  ],
+};
+
 class SignUpScreen extends ConsumerStatefulWidget {
-  const SignUpScreen({super.key});
+  const SignUpScreen({
+    super.key,
+    this.redirectToPlan,
+  });
+
+  /// null => direct signup => assign Beginner automatically
+  /// 'Basic' or 'Expert' => signup then redirect to paywall
+  final String? redirectToPlan;
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
@@ -38,6 +70,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   bool _obscurePassword = true;
   bool _isBackHovered = false;
   bool _isLoginHovered = false;
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -47,6 +80,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (width >= 768) return 520;
     return double.infinity;
   }
+
+  bool get _comingFromPlan => widget.redirectToPlan != null;
 
   @override
   void dispose() {
@@ -121,6 +156,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   children: [
                     _buildBackButton(),
                     const SizedBox(height: 24),
+                    if (_comingFromPlan) ...[
+                      _buildPlanContextBanner(),
+                      const SizedBox(height: 20),
+                    ],
                     _buildHeading(),
                     const SizedBox(height: 20),
                     _buildTermsCheckbox(),
@@ -156,6 +195,48 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlanContextBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F0FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFBDD3FF)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.rocket_launch_outlined,
+            color: _SignUpColors.primaryBlue,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _SignUpColors.textPrimary,
+                ),
+                children: [
+                  const TextSpan(text: 'You’re signing up for the '),
+                  TextSpan(
+                    text: '${widget.redirectToPlan} Plan',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _SignUpColors.primaryBlue,
+                    ),
+                  ),
+                  const TextSpan(text: '. Payment comes next.'),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -234,7 +315,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         Checkbox(
           value: _agreedToTerms,
           onChanged: (value) {
-            // TODO: connect to auth_provider.dart
             setState(() {
               _agreedToTerms = value ?? false;
             });
@@ -262,11 +342,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     alignment: PlaceholderAlignment.baseline,
                     baseline: TextBaseline.alphabetic,
                     child: GestureDetector(
-                      onTap: () {
-                        // TODO: connect to auth_provider.dart
-                      },
-                      child: const Text('QiyasReady Terms of Service',
-                          style: linkStyle),
+                      onTap: () {},
+                      child: const Text(
+                        'QiyasReady Terms of Service',
+                        style: linkStyle,
+                      ),
                     ),
                   ),
                   const TextSpan(text: ' and '),
@@ -274,9 +354,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     alignment: PlaceholderAlignment.baseline,
                     baseline: TextBaseline.alphabetic,
                     child: GestureDetector(
-                      onTap: () {
-                        // TODO: connect to auth_provider.dart
-                      },
+                      onTap: () {},
                       child: const Text('Privacy Policy', style: linkStyle),
                     ),
                   ),
@@ -293,10 +371,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Widget _buildGoogleButton({required bool isLoading}) {
     return _OutlinedActionButton(
       onTap: () {
-        if (isLoading) {
-          return;
-        }
-
+        if (isLoading) return;
         _handleGoogleSignIn();
       },
       height: 52,
@@ -358,8 +433,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildSocialButton(
-      {required VoidCallback onTap, required Widget child}) {
+  Widget _buildSocialButton({
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
     return _OutlinedActionButton(
       onTap: onTap,
       height: 52,
@@ -372,8 +449,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     return const Row(
       children: [
         Expanded(
-            child:
-                Divider(color: _SignUpColors.border, thickness: 1, height: 1)),
+          child:
+              Divider(color: _SignUpColors.border, thickness: 1, height: 1),
+        ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 12),
           child: Text(
@@ -386,8 +464,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           ),
         ),
         Expanded(
-            child:
-                Divider(color: _SignUpColors.border, thickness: 1, height: 1)),
+          child:
+              Divider(color: _SignUpColors.border, thickness: 1, height: 1),
+        ),
       ],
     );
   }
@@ -441,7 +520,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   strokeWidth: 2,
                 ),
               )
-            : const Text('Sign up'),
+            : Text(
+                _comingFromPlan ? 'Sign up & Continue to Payment' : 'Sign up',
+              ),
       ),
     );
   }
@@ -533,15 +614,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           password: password,
         );
 
-    if (!mounted) return;
+    if (!mounted || !success) return;
 
-    if (success) {
-      _emailController.clear();
-      _passwordController.clear();
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    }
+    _emailController.clear();
+    _passwordController.clear();
+
+    await _handlePostAuthNavigation();
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -553,13 +631,42 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final success =
         await ref.read(authControllerProvider.notifier).signInWithGoogle();
 
-    if (!mounted || !success) {
+    if (!mounted || !success) return;
+
+    await _handlePostAuthNavigation();
+  }
+
+  Future<void> _handlePostAuthNavigation() async {
+    if (_comingFromPlan) {
+      final plan = widget.redirectToPlan!;
+      final features = _kPlanFeatures[plan] ?? const <String>[];
+
+      ref.read(pendingPlanProvider.notifier).state = plan;
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => PaywallScreen(
+            planName: plan,
+            planFeatures: features,
+          ),
+        ),
+      );
       return;
     }
 
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    ref.read(pendingPlanProvider.notifier).state = null;
+    await assignDefaultPlan();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProfileDashboardScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   void _handleLogin() {
@@ -691,7 +798,9 @@ class _LabeledInputField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(
-                  color: _SignUpColors.primaryBlue, width: 1.5),
+                color: _SignUpColors.primaryBlue,
+                width: 1.5,
+              ),
             ),
             helperText: helperText,
             helperMaxLines: 3,

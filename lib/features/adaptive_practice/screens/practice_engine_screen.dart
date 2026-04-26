@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../practice/services/ai_tutor_service.dart';
@@ -520,6 +521,7 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
     required String correctAnswer,
     required String userAnswer,
     required String grade,
+    required bool isCorrect,
   }) async {
     setState(() {
       _isLoadingAI = true;
@@ -532,6 +534,7 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
             correctAnswer: correctAnswer,
             userAnswer: userAnswer,
             grade: grade,
+            isCorrect: isCorrect,
           );
 
       if (!mounted) return;
@@ -719,6 +722,8 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
                                                   grade:
                                                       widget.selectedGrade ??
                                                           'Grade 10',
+                                                  isCorrect: state.selectedOptionId ==
+                                                      question.correctOptionId,
                                                 );
                                               },
                                         icon: _isLoadingAI
@@ -789,11 +794,17 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 10),
-                                      Text(
-                                        _aiExplanation!,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
+                                      Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: MarkdownBody(
+                                          data: _aiExplanation!,
+                                          selectable: true,
+                                          styleSheet: MarkdownStyleSheet(
+                                            p: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

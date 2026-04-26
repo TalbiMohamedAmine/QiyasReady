@@ -164,6 +164,7 @@ class _MockExamReviewScreenState extends ConsumerState<MockExamReviewScreen> {
             correctAnswer: correctOption.text,
             userAnswer: userOption.text,
             grade: _grade,
+            isCorrect: item.isCorrect,
           );
 
       if (!mounted) {

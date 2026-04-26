@@ -24,6 +24,7 @@ class AITutorService {
     required String correctAnswer,
     required String userAnswer,
     required String grade,
+    required bool isCorrect,
   }) async {
     final apiKey = dotenv.env['OPENROUTER_API_KEY']?.trim();
     if (apiKey == null || apiKey.isEmpty) {
@@ -33,14 +34,67 @@ class AITutorService {
       );
     }
 
-    final prompt =
-        'You are an expert tutor for a $grade student in Saudi Arabia preparing for Qudurat/Tahsili. '
-        "The student answered '$userAnswer' instead of the correct answer '$correctAnswer' "
-        "for the question: '$questionText'. Explain briefly and kindly why their answer is wrong "
-        'and how to find the correct one.';
+    final String prompt;
+    if (isCorrect) {
+      prompt = '''
+You are an expert, empathetic tutor for a $grade student in Saudi Arabia preparing for Qiyas (Qudurat/Tahsili) exams.
+The student answered the question CORRECTLY. Your task is to reinforce their understanding and praise them.
+
+[Question Data]
+Question: "$questionText"
+Student's Correct Answer: "$userAnswer"
+
+[STRICT CONSTRAINTS]
+1. OUTPUT LANGUAGE: You MUST write your entire response in Arabic (Fusha). Do NOT output any English words, letters, or punctuation.
+2. NO REASONING: Do NOT output your internal thoughts, thinking process, or preambles. Output ONLY the final Arabic response.
+3. FORMATTING: Use Markdown.
+
+[REQUIRED OUTPUT STRUCTURE]
+Follow this exact structure using these Arabic headings:
+
+🌟 **إجابة رائعة وموفقة!**
+(Write one short, encouraging sentence in Arabic praising them).
+
+🎯 **لماذا هذه الإجابة صحيحة؟**
+(Explain briefly in Arabic the logical rule or concept that makes this answer correct).
+
+💡 **تلميحة سريعة:**
+(Provide one quick, one-sentence tip in Arabic to help them remember this for the Qiyas exam).
+''';
+    } else {
+      prompt = '''
+You are an expert, empathetic tutor for a $grade student in Saudi Arabia preparing for Qiyas (Qudurat/Tahsili) exams.
+The student answered the question INCORRECTLY. Your task is to clearly explain the concept and why they were wrong.
+
+[Question Data]
+Question: "$questionText"
+Student's Wrong Answer: "$userAnswer"
+Correct Answer: "$correctAnswer"
+
+[STRICT CONSTRAINTS]
+1. OUTPUT LANGUAGE: You MUST write your entire response in Arabic (Fusha). Do NOT output any English words, letters, or punctuation.
+2. NO REASONING: Do NOT output your internal thoughts, thinking process, or preambles. Output ONLY the final Arabic response.
+3. NO HALLUCINATION: Do not invent numbers or rules not present in the question.
+4. FORMATTING: Use Markdown.
+
+[REQUIRED OUTPUT STRUCTURE]
+Follow this exact structure using these Arabic headings:
+
+💡 **محاولة جيدة!**
+(Write one short sentence in Arabic encouraging them and saying mistakes are how we learn).
+
+🎯 **المفهوم الأساسي:**
+(Explain the core mathematical or scientific rule behind this question briefly in Arabic).
+
+🛠️ **كيف نصل للإجابة الصحيحة؟**
+(Explain step-by-step in Arabic how to get to "$correctAnswer").
+
+🔍 **أين كان الخلل؟**
+(Explain gently in Arabic why their specific answer "$userAnswer" is incorrect and what trap they fell into).
+''';
+    }
 
     final requestBody = {
-      // FIX: Changed from 'google/gemini-flash-1.5' to 'google/gemini-1.5-flash'
       'model': 'nvidia/nemotron-3-super-120b-a12b:free', 
       'messages': [
         {
