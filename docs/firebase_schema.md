@@ -19,6 +19,7 @@
   examId
   chapterId
   lessonId
+    target_grade[]       <-- Targeted grades for this question (e.g., ["Grade 10", "Grade 11"])
   difficulty
   stem
   options[]
