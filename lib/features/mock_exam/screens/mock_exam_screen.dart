@@ -391,7 +391,9 @@ class _MockExamBody extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: state.isFinalQuestion ? onSubmit : null,
+                  onPressed: (state.isFinalQuestion && selectedOptionId != null)
+                      ? onSubmit
+                      : null,
                   icon: const Icon(Icons.send_rounded),
                   label: Text(state.isFinalQuestion
                       ? 'Submit Exam'
@@ -533,7 +535,10 @@ class _MockExamDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = state.isFinalQuestion;
+    final currentQuestion = state.currentQuestion;
+    final isLastAnswered = currentQuestion != null &&
+        state.userAnswers[currentQuestion.id] != null;
+    final canSubmit = state.isFinalQuestion && isLastAnswered;
 
     return Drawer(
       child: SafeArea(
@@ -575,13 +580,7 @@ class _MockExamDrawer extends StatelessWidget {
               enabled: true,
               onTap: onForfeit,
             ),
-            const SizedBox(height: 12),
-            const _DrawerActionCard(
-              title: 'Common mistakes report',
-              subtitle: 'Coming soon after scoring is finalized.',
-              icon: Icons.auto_graph_rounded,
-              enabled: false,
-            ),
+
           ],
         ),
       ),

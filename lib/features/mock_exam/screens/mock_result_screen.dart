@@ -112,30 +112,6 @@ class MockResultScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Common Mistakes Report',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Coming soon. The next iteration will surface weak topics, repeated mistake patterns, and time pressure analysis.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: () =>
                     Navigator.of(context).popUntil((route) => route.isFirst),
