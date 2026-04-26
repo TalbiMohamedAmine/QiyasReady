@@ -4,6 +4,10 @@
     examTarget
     locale
     grade               <-- Default user grade (10th/11th/12th)
+    study_plan:
+      exam_date         <-- Timestamp
+      target_score      <-- int
+      daily_goal_questions <-- int
   settings: (theme, layout, etc.)
   entitlement: (tier, trial status, etc.)
   global_stats:           <-- FRIEND'S ADDITION (1-read Dashboard)
