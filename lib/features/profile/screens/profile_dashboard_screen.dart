@@ -20,6 +20,7 @@ import '../providers/user_profile_provider.dart';
 import '../../../shared/widgets/upgrade_banner.dart';
 import '../../goals/screens/goal_setting_screen.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
+import '../../leaderboard/screens/leaderboard_screen.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -112,6 +113,16 @@ class ProfileDashboardScreen extends ConsumerWidget {
         title: const Text('Profile'),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.leaderboard_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const LeaderboardScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.track_changes),
             onPressed: () {
