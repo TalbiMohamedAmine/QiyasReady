@@ -11,6 +11,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../mock_exam/screens/mock_exam_screen.dart';
 import '../../subscriptions/providers/subscriptions_provider.dart';
 import '../../subscriptions/screens/plan_selection_screen.dart';
+import 'wellbeing_stress_screen.dart';
 import '../providers/profile_onboarding_provider.dart';
 import '../providers/session_history_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -67,10 +68,12 @@ class ProfileDashboardScreen extends ConsumerWidget {
         (gradeAsync.valueOrNull == null ||
             gradeAsync.valueOrNull!.trim().isEmpty);
 
-    final hasShownForCurrentUser =
-      currentUserId != null && ref.read(gradeDialogShownProvider).contains(currentUserId);
+    final hasShownForCurrentUser = currentUserId != null &&
+        ref.read(gradeDialogShownProvider).contains(currentUserId);
 
-    if (shouldShowGradeDialog && currentUserId != null && !hasShownForCurrentUser) {
+    if (shouldShowGradeDialog &&
+        currentUserId != null &&
+        !hasShownForCurrentUser) {
       _scheduleGradeDialog(context, ref, currentUserId);
     }
 
@@ -342,8 +345,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             description:
                                 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
-                            isSelected:
-                                selectedMode == DashboardStudyMode.mock,
+                            isSelected: selectedMode == DashboardStudyMode.mock,
                             onTap: () {
                               if (selectedGrade == null) {
                                 ScaffoldMessenger.of(context)
@@ -418,7 +420,52 @@ class ProfileDashboardScreen extends ConsumerWidget {
                         children: [
                           _PlanRow(
                             isFree: isFree,
-                            planLabel: planAsync.valueOrNull?.label ?? 'Beginner',
+                            planLabel:
+                                planAsync.valueOrNull?.label ?? 'Beginner',
+                          ),
+                          const SizedBox(height: 12),
+                          Material(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            child: ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              contentPadding:
+                                  const EdgeInsetsDirectional.fromSTEB(
+                                16,
+                                4,
+                                12,
+                                4,
+                              ),
+                              leading: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAF6FB),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.self_improvement_outlined,
+                                  color: Color(0xFF2A6F97),
+                                ),
+                              ),
+                              title:
+                                  const Text('Wellbeing and Stress Management'),
+                              subtitle: Text(
+                                'Breathing exercise and proven stress tips',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const WellbeingStressScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Material(
@@ -469,18 +516,26 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                       return;
                                     }
 
-                                    ref.read(pendingPlanProvider.notifier).state = null;
-                                    ref.read(dashboardStudyModeProvider.notifier).state =
-                                        DashboardStudyMode.practice;
-                                    ref.read(gradeDialogShownProvider.notifier).state =
-                                        <String>{};
+                                    ref
+                                        .read(pendingPlanProvider.notifier)
+                                        .state = null;
+                                    ref
+                                        .read(
+                                            dashboardStudyModeProvider.notifier)
+                                        .state = DashboardStudyMode.practice;
+                                    ref
+                                        .read(gradeDialogShownProvider.notifier)
+                                        .state = <String>{};
 
-                                    ref.invalidate(subscriptionsControllerProvider);
+                                    ref.invalidate(
+                                        subscriptionsControllerProvider);
                                     ref.invalidate(userPlanProvider);
                                     ref.invalidate(userProfileStreamProvider);
                                     ref.invalidate(userGradeProvider);
-                                    ref.invalidate(gradeSelectionControllerProvider);
-                                    ref.invalidate(adaptivePracticeControllerProvider);
+                                    ref.invalidate(
+                                        gradeSelectionControllerProvider);
+                                    ref.invalidate(
+                                        adaptivePracticeControllerProvider);
 
                                     Navigator.of(context).pushAndRemoveUntil(
                                       MaterialPageRoute<void>(
@@ -640,7 +695,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               : () async {
                                   final saved = await dialogRef
                                       .read(
-                                        gradeSelectionControllerProvider.notifier,
+                                        gradeSelectionControllerProvider
+                                            .notifier,
                                       )
                                       .saveGrade(grade);
 
@@ -686,14 +742,10 @@ class _PlanRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isFree
-            ? const Color(0xFFE8F0FF)
-            : const Color(0xFFE7F7F0),
+        color: isFree ? const Color(0xFFE8F0FF) : const Color(0xFFE7F7F0),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isFree
-              ? const Color(0xFFBDD3FF)
-              : const Color(0xFFB2DEC8),
+          color: isFree ? const Color(0xFFBDD3FF) : const Color(0xFFB2DEC8),
         ),
       ),
       child: Row(
@@ -712,12 +764,8 @@ class _PlanRow extends StatelessWidget {
               ],
             ),
             child: Icon(
-              isFree
-                  ? Icons.lock_outline
-                  : Icons.workspace_premium_outlined,
-              color: isFree
-                  ? const Color(0xFF1A6BFF)
-                  : const Color(0xFF1B7F5B),
+              isFree ? Icons.lock_outline : Icons.workspace_premium_outlined,
+              color: isFree ? const Color(0xFF1A6BFF) : const Color(0xFF1B7F5B),
               size: 20,
             ),
           ),
@@ -728,9 +776,7 @@ class _PlanRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isFree
-                      ? 'You’re on the Free plan'
-                      : '$planLabel Plan active',
+                  isFree ? 'You’re on the Free plan' : '$planLabel Plan active',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -781,8 +827,7 @@ class _PlanRow extends StatelessWidget {
             )
           else
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: const Color(0xFF1B7F5B).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -1136,9 +1181,7 @@ class _ExamModeActionCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Icon(
-                isSelected
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
+                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
                 color: isSelected
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,
