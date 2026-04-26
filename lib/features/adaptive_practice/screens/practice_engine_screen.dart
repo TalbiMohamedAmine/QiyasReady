@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../practice/services/ai_tutor_service.dart';
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
 import 'practice_summary_screen.dart';
@@ -490,7 +491,7 @@ final practiceControllerProvider = StateNotifierProvider.autoDispose
   return PracticeController(ref, args);
 });
 
-class PracticeEngineScreen extends ConsumerWidget {
+class PracticeEngineScreen extends ConsumerStatefulWidget {
   const PracticeEngineScreen({
     super.key,
     required this.selectedSubject,
@@ -505,18 +506,84 @@ class PracticeEngineScreen extends ConsumerWidget {
   final String? selectedGrade;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PracticeEngineScreen> createState() =>
+      _PracticeEngineScreenState();
+}
+
+class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
+  bool _isLoadingAI = false;
+  String? _aiExplanation;
+  String? _activeQuestionId;
+
+  Future<void> _askAiTutor({
+    required String questionText,
+    required String correctAnswer,
+    required String userAnswer,
+    required String grade,
+  }) async {
+    setState(() {
+      _isLoadingAI = true;
+      _aiExplanation = null;
+    });
+
+    try {
+      final explanation = await ref.read(aiTutorProvider).generateExplanation(
+            questionText: questionText,
+            correctAnswer: correctAnswer,
+            userAnswer: userAnswer,
+            grade: grade,
+          );
+
+      if (!mounted) return;
+
+      setState(() {
+        _aiExplanation = explanation;
+      });
+    } on AITutorFailure catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('AI Tutor is temporarily unavailable. Please retry.'),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingAI = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final args = PracticeEngineArgs(
-      selectedSubject: selectedSubject,
-      chapterId: chapterId,
-      lessonId: lessonId,
-      selectedGrade: selectedGrade,
+      selectedSubject: widget.selectedSubject,
+      chapterId: widget.chapterId,
+      lessonId: widget.lessonId,
+      selectedGrade: widget.selectedGrade,
     );
 
     final state = ref.watch(practiceControllerProvider(args));
     final controller = ref.read(practiceControllerProvider(args).notifier);
     final question = state.currentQuestion;
+
+    // Reset AI state when the question changes
+    if (question != null && _activeQuestionId != question.id) {
+      _activeQuestionId = question.id;
+      _aiExplanation = null;
+      _isLoadingAI = false;
+    }
 
     ref.listen<PracticeState>(practiceControllerProvider(args),
         (previous, next) {
@@ -531,7 +598,7 @@ class PracticeEngineScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: Text('$selectedSubject Practice'),
+        title: Text('${widget.selectedSubject} Practice'),
       ),
       body: SafeArea(
         child: state.isLoading
@@ -621,25 +688,117 @@ class PracticeEngineScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 12),
                                       FilledButton.tonalIcon(
-                                        onPressed: () {
-                                          debugPrint(
-                                              'Explain with AI tapped: Coming Soon');
-                                          ScaffoldMessenger.of(context)
-                                            ..hideCurrentSnackBar()
-                                            ..showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'Explain with AI is coming soon.'),
-                                              ),
-                                            );
-                                        },
-                                        icon: const Icon(Icons.auto_awesome),
-                                        label: const Text('Explain with AI'),
+                                        onPressed: _isLoadingAI
+                                            ? null
+                                            : () {
+                                                final correctOpt = question
+                                                    .options
+                                                    .where((o) =>
+                                                        o.id ==
+                                                        question
+                                                            .correctOptionId)
+                                                    .firstOrNull;
+                                                final userOpt = question
+                                                    .options
+                                                    .where((o) =>
+                                                        o.id ==
+                                                        state
+                                                            .selectedOptionId)
+                                                    .firstOrNull;
+
+                                                if (correctOpt == null ||
+                                                    userOpt == null) {
+                                                  return;
+                                                }
+
+                                                _askAiTutor(
+                                                  questionText: question.stem,
+                                                  correctAnswer:
+                                                      correctOpt.text,
+                                                  userAnswer: userOpt.text,
+                                                  grade:
+                                                      widget.selectedGrade ??
+                                                          'Grade 10',
+                                                );
+                                              },
+                                        icon: _isLoadingAI
+                                            ? const SizedBox(
+                                                height: 16,
+                                                width: 16,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(Icons.auto_awesome),
+                                        label: Text(
+                                          _isLoadingAI
+                                              ? 'Generating...'
+                                              : 'Explain with AI',
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
+                              // AI Tutor explanation card
+                              if (_aiExplanation != null &&
+                                  _aiExplanation!.trim().isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(18),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        colorScheme.primaryContainer
+                                            .withValues(alpha: 0.35),
+                                        colorScheme.tertiaryContainer
+                                            .withValues(alpha: 0.25),
+                                      ],
+                                    ),
+                                    border: Border.all(
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.auto_awesome,
+                                            size: 20,
+                                            color: colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'AI Tutor',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: colorScheme.primary,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        _aiExplanation!,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                             if (state.isAnswered) ...[
                               const SizedBox(height: 16),
