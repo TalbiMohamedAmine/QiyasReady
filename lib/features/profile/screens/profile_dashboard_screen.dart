@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
 import '../../adaptive_practice/screens/practice_runner_screen.dart';
+import '../../onboarding/screens/welcome_screen.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../subscriptions/providers/subscriptions_provider.dart';
+import '../../subscriptions/screens/plan_selection_screen.dart';
 import '../providers/profile_onboarding_provider.dart';
 import '../providers/user_profile_provider.dart';
+import '../../../shared/widgets/upgrade_banner.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -13,8 +17,8 @@ final dashboardStudyModeProvider = StateProvider<DashboardStudyMode>((ref) {
   return DashboardStudyMode.practice;
 });
 
-final gradeDialogShownProvider = StateProvider<bool>((ref) {
-  return false;
+final gradeDialogShownProvider = StateProvider<Set<String>>((ref) {
+  return <String>{};
 });
 
 class ProfileDashboardScreen extends ConsumerWidget {
@@ -26,11 +30,18 @@ class ProfileDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final authAsync = ref.watch(authStateChangesProvider);
     final actionState = ref.watch(authControllerProvider);
     final practiceState = ref.watch(adaptivePracticeControllerProvider);
     final gradeAsync = ref.watch(userGradeProvider);
     final profileAsync = ref.watch(userProfileStreamProvider);
     final selectedMode = ref.watch(dashboardStudyModeProvider);
+    final currentUserId = authAsync.valueOrNull?.uid;
+
+    final planAsync = ref.watch(userPlanProvider);
+    final plan = planAsync.valueOrNull;
+    final isPlanLoading = planAsync.isLoading;
+    final isFree = plan?.isFree ?? true;
 
     final totalAnswered = _readIntFromProfile(
       profileAsync.valueOrNull,
@@ -48,24 +59,16 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final accuracyLabel = '${overallAccuracyPct.round()}%';
     final avgSolveLabel = '${avgSolveTime.round()}s';
 
-    ref.listen<AsyncValue<UserLifecycleStatus>>(userLifecycleStatusProvider,
-        (previous, next) {
-      if (!context.mounted || ref.read(gradeDialogShownProvider)) {
-        return;
-      }
+    final shouldShowGradeDialog = gradeAsync.hasValue &&
+        (gradeAsync.valueOrNull == null ||
+            gradeAsync.valueOrNull!.trim().isEmpty);
 
-      next.whenData((status) {
-        if (status == UserLifecycleStatus.newUser) {
-          ref.read(gradeDialogShownProvider.notifier).state = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) {
-              return;
-            }
-            _showGradeSelectionDialog(context, ref);
-          });
-        }
-      });
-    });
+    final hasShownForCurrentUser =
+      currentUserId != null && ref.read(gradeDialogShownProvider).contains(currentUserId);
+
+    if (shouldShowGradeDialog && currentUserId != null && !hasShownForCurrentUser) {
+      _scheduleGradeDialog(context, ref, currentUserId);
+    }
 
     ref.listen<AuthActionState>(authControllerProvider, (previous, next) {
       final previousError = previous?.errorMessage;
@@ -106,6 +109,14 @@ class ProfileDashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (isPlanLoading) ...[
+                    const LinearProgressIndicator(minHeight: 2),
+                    const SizedBox(height: 16),
+                  ],
+                  if (!isPlanLoading && isFree) ...[
+                    const UpgradeBanner(),
+                    const SizedBox(height: 16),
+                  ],
                   _ProfileHeader(colorScheme: colorScheme),
                   const SizedBox(height: 20),
                   LayoutBuilder(
@@ -225,7 +236,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             description:
                                 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
-                            isSelected: selectedMode == DashboardStudyMode.mock,
+                            isSelected:
+                                selectedMode == DashboardStudyMode.mock,
                             onTap: () {
                               ref
                                   .read(dashboardStudyModeProvider.notifier)
@@ -294,31 +306,9 @@ class ProfileDashboardScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Upgrade your learning flow',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Unlock premium practice packs, deeper analytics, and personalized exam guidance.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: () {},
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(52),
-                              backgroundColor: const Color(0xFF0F4C81),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                            icon: const Icon(Icons.workspace_premium_outlined),
-                            label: const Text('Upgrade to Premium'),
+                          _PlanRow(
+                            isFree: isFree,
+                            planLabel: planAsync.valueOrNull?.label ?? 'Beginner',
                           ),
                           const SizedBox(height: 12),
                           Material(
@@ -360,10 +350,34 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           OutlinedButton.icon(
                             onPressed: actionState.isLoading
                                 ? null
-                                : () {
-                                    ref
+                                : () async {
+                                    final success = await ref
                                         .read(authControllerProvider.notifier)
                                         .signOut();
+
+                                    if (!context.mounted || !success) {
+                                      return;
+                                    }
+
+                                    ref.read(pendingPlanProvider.notifier).state = null;
+                                    ref.read(dashboardStudyModeProvider.notifier).state =
+                                        DashboardStudyMode.practice;
+                                    ref.read(gradeDialogShownProvider.notifier).state =
+                                        <String>{};
+
+                                    ref.invalidate(subscriptionsControllerProvider);
+                                    ref.invalidate(userPlanProvider);
+                                    ref.invalidate(userProfileStreamProvider);
+                                    ref.invalidate(userGradeProvider);
+                                    ref.invalidate(gradeSelectionControllerProvider);
+                                    ref.invalidate(adaptivePracticeControllerProvider);
+
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => const WelcomeScreen(),
+                                      ),
+                                      (route) => false,
+                                    );
                                   },
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
@@ -414,6 +428,71 @@ class ProfileDashboardScreen extends ConsumerWidget {
     );
   }
 
+  void _scheduleGradeDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String currentUserId,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) {
+        return;
+      }
+
+      final route = ModalRoute.of(context);
+      if (route == null || !route.isCurrent) {
+        _scheduleGradeDialog(context, ref, currentUserId);
+        return;
+      }
+
+      final latestGradeAsync = ref.read(userGradeProvider);
+      if (!latestGradeAsync.hasValue) {
+        return;
+      }
+
+      final latestGrade = latestGradeAsync.valueOrNull;
+      final stillNeedsGrade = latestGrade == null || latestGrade.trim().isEmpty;
+      final alreadyShownForCurrentUser =
+          ref.read(gradeDialogShownProvider).contains(currentUserId);
+
+      // Authoritative check from Firestore to prevent showing popup when
+      // grade already exists for this account.
+      final userDoc = await ref
+          .read(firebaseFirestoreProvider)
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+
+      final data = userDoc.data();
+      final profile = data?['profile'];
+      final nestedGrade =
+          profile is Map<String, dynamic> ? profile['grade'] as String? : null;
+      final topLevelGrade = data?['grade'] as String?;
+      final firestoreGrade = (nestedGrade ?? topLevelGrade)?.trim();
+      final hasFirestoreGrade =
+          firestoreGrade != null && firestoreGrade.isNotEmpty;
+
+      if (hasFirestoreGrade) {
+        final shownUsers = ref.read(gradeDialogShownProvider);
+        ref.read(gradeDialogShownProvider.notifier).state = {
+          ...shownUsers,
+          currentUserId,
+        };
+        return;
+      }
+
+      if (!stillNeedsGrade || alreadyShownForCurrentUser) {
+        return;
+      }
+
+      final shownUsers = ref.read(gradeDialogShownProvider);
+      ref.read(gradeDialogShownProvider.notifier).state = {
+        ...shownUsers,
+        currentUserId,
+      };
+      _showGradeSelectionDialog(context, ref);
+    });
+  }
+
   Future<void> _showGradeSelectionDialog(
     BuildContext context,
     WidgetRef ref,
@@ -422,59 +501,61 @@ class ProfileDashboardScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        final saveState = ref.watch(gradeSelectionControllerProvider);
-        final isSaving = saveState.isLoading;
+        return Consumer(
+          builder: (context, dialogRef, _) {
+            final saveState = dialogRef.watch(gradeSelectionControllerProvider);
+            final isSaving = saveState.isLoading;
 
-        return PopScope(
-          canPop: false,
-          child: AlertDialog(
-            title: const Text('Welcome! Select your Grade'),
-            contentPadding:
-                const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Choose your current grade to personalize practice.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 14),
-                for (final grade in _gradeOptions)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(bottom: 10),
-                    child: FilledButton.tonal(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              final saved = await ref
-                                  .read(
-                                    gradeSelectionControllerProvider.notifier,
-                                  )
-                                  .saveGrade(grade);
-
-                              if (saved && context.mounted) {
-                                Navigator.of(dialogContext).pop();
-                              }
-                            },
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(46),
-                      ),
-                      child: Text(grade),
+            return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                title: const Text('Welcome! Select your Grade'),
+                contentPadding:
+                    const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Choose your current grade to personalize practice.',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                  ),
-                if (saveState.hasError)
-                  Text(
-                    'Unable to save grade. Please try again.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Theme.of(context).colorScheme.error),
-                    textAlign: TextAlign.start,
-                  ),
-              ],
-            ),
-          ),
+                    const SizedBox(height: 14),
+                    for (final grade in _gradeOptions)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(bottom: 10),
+                        child: FilledButton.tonal(
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  final saved = await dialogRef
+                                      .read(
+                                        gradeSelectionControllerProvider.notifier,
+                                      )
+                                      .saveGrade(grade);
+
+                                  if (saved && context.mounted) {
+                                    Navigator.of(dialogContext).pop();
+                                  }
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                          ),
+                          child: Text(grade),
+                        ),
+                      ),
+                    if (saveState.hasError)
+                      Text(
+                        'Unable to save grade. Please try again.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.error),
+                        textAlign: TextAlign.start,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -512,6 +593,133 @@ class ProfileDashboardScreen extends ConsumerWidget {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PracticeRunnerScreen(chapterId: chapterId),
+      ),
+    );
+  }
+}
+
+class _PlanRow extends StatelessWidget {
+  const _PlanRow({
+    required this.isFree,
+    required this.planLabel,
+  });
+
+  final bool isFree;
+  final String planLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isFree
+            ? const Color(0xFFE8F0FF)
+            : const Color(0xFFE7F7F0),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isFree
+              ? const Color(0xFFBDD3FF)
+              : const Color(0xFFB2DEC8),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: Icon(
+              isFree
+                  ? Icons.lock_outline
+                  : Icons.workspace_premium_outlined,
+              color: isFree
+                  ? const Color(0xFF1A6BFF)
+                  : const Color(0xFF1B7F5B),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isFree
+                      ? 'You’re on the Free plan'
+                      : '$planLabel Plan active',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isFree
+                        ? const Color(0xFF1A6BFF)
+                        : const Color(0xFF1B7F5B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isFree
+                      ? 'Upgrade to unlock unlimited exams & AI tools.'
+                      : 'Full access to all premium features.',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isFree)
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const PlanSelectionScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A6BFF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Upgrade',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B7F5B).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                color: Color(0xFF1B7F5B),
+                size: 18,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -800,7 +1008,9 @@ class _ModePickerCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Icon(
-                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                isSelected
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 color: isSelected
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,

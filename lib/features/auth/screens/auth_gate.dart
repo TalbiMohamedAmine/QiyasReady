@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../profile/screens/profile_dashboard_screen.dart';
 import '../providers/auth_provider.dart';
 import 'sign_in_screen.dart';
+import '../../onboarding/screens/welcome_screen.dart';
 
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
@@ -46,7 +47,7 @@ class AuthGate extends ConsumerWidget {
       ),
       data: (user) {
         if (user == null) {
-          return const SignInScreen();
+          return const WelcomeScreen();
         }
 
         return const ProfileDashboardScreen();
