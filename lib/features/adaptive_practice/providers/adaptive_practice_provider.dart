@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../adaptive_practice_service.dart';
+import '../../profile/services/stats_engine_service.dart';
 
 enum PracticeLoadStatus {
   initial,
@@ -21,6 +23,7 @@ class AdaptivePracticeState {
     this.selectedAnswers = const {},
     this.questionTimeLimitSec = 60,
     this.remainingSec = 60,
+    this.elapsedSec = 0,
     this.isSubmitting = false,
     this.errorMessage,
     this.chapterId,
@@ -35,6 +38,7 @@ class AdaptivePracticeState {
   final Map<String, String> selectedAnswers;
   final int questionTimeLimitSec;
   final int remainingSec;
+  final int elapsedSec;
   final bool isSubmitting;
   final String? errorMessage;
   final String? chapterId;
@@ -79,6 +83,7 @@ class AdaptivePracticeState {
     Map<String, String>? selectedAnswers,
     int? questionTimeLimitSec,
     int? remainingSec,
+    int? elapsedSec,
     bool? isSubmitting,
     String? errorMessage,
     bool clearError = false,
@@ -95,6 +100,7 @@ class AdaptivePracticeState {
       selectedAnswers: selectedAnswers ?? this.selectedAnswers,
       questionTimeLimitSec: questionTimeLimitSec ?? this.questionTimeLimitSec,
       remainingSec: remainingSec ?? this.remainingSec,
+      elapsedSec: elapsedSec ?? this.elapsedSec,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       chapterId: clearScope ? null : (chapterId ?? this.chapterId),
@@ -109,6 +115,10 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
 
+final adaptivePracticeAuthProvider = Provider<FirebaseAuth>((ref) {
+  return FirebaseAuth.instance;
+});
+
 final adaptivePracticeServiceProvider =
     Provider<AdaptivePracticeService>((ref) {
   final firestore = ref.watch(firestoreProvider);
@@ -116,9 +126,10 @@ final adaptivePracticeServiceProvider =
 });
 
 class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
-  AdaptivePracticeController(this._service)
+  AdaptivePracticeController(this._ref, this._service)
       : super(const AdaptivePracticeState());
 
+  final Ref _ref;
   final AdaptivePracticeService _service;
   Timer? _timer;
 
@@ -160,6 +171,7 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
         selectedAnswers: <String, String>{},
         questionTimeLimitSec: effectiveTimeLimit,
         remainingSec: effectiveTimeLimit,
+        elapsedSec: 0,
         isSubmitting: false,
         clearError: true,
       );
@@ -224,10 +236,34 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
     );
 
     try {
+      final auth = _ref.read(adaptivePracticeAuthProvider);
+      final currentUser = auth.currentUser;
+      if (currentUser == null) {
+        throw const StatsEngineFailure(
+          'You must be signed in to save session statistics.',
+          code: 'unauthenticated',
+        );
+      }
+
+      await _ref.read(statsEngineProvider).finalizeSessionAndUpdateStats(
+            currentUser.uid,
+            {
+              'total_questions_answered': state.answeredCount,
+              'correctCount': state.correctCount,
+              'totalTimeSpentSec': state.elapsedSec,
+              'score': {
+                'total': state.answeredCount,
+                'correct': state.correctCount,
+                'wrong': state.answeredCount - state.correctCount,
+              },
+            },
+          );
+
       state = state.copyWith(
         isSubmitting: false,
         status: PracticeLoadStatus.completed,
       );
+      return;
     } catch (_) {
       state = state.copyWith(
         isSubmitting: false,
@@ -261,7 +297,10 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
         return;
       }
 
-      state = state.copyWith(remainingSec: state.remainingSec - 1);
+      state = state.copyWith(
+        remainingSec: state.remainingSec - 1,
+        elapsedSec: state.elapsedSec + 1,
+      );
     });
   }
 
@@ -281,5 +320,5 @@ final adaptivePracticeControllerProvider =
     StateNotifierProvider<AdaptivePracticeController, AdaptivePracticeState>(
         (ref) {
   final service = ref.watch(adaptivePracticeServiceProvider);
-  return AdaptivePracticeController(service);
+  return AdaptivePracticeController(ref, service);
 });
