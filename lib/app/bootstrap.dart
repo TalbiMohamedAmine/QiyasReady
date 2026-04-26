@@ -16,7 +16,8 @@ Future<void> bootstrap() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await DatabaseSeeder.seedDummyData();
+    // Database seeding disabled - uncomment to enable mock data insertion
+    // await DatabaseSeeder.seedDummyData();
   } catch (error, stackTrace) {
     initializationError = error;
     initializationStackTrace = stackTrace;
