@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/security/exam_security_service.dart';
+import '../../../core/security/security_overlay.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
@@ -30,6 +32,36 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
   String? _activeAnswerId;
 
   @override
+  void initState() {
+    super.initState();
+    _activateSecurityOrExit();
+  }
+
+  Future<void> _activateSecurityOrExit() async {
+    final isSecured = await ExamSecurityService.instance.enableProtection();
+    if (isSecured || !mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Secure Practice Mode is unavailable on this device.'),
+        ),
+      );
+
+    Navigator.of(context).maybePop();
+  }
+
+  @override
+  void dispose() {
+    // Disable screen protection when leaving practice
+    ExamSecurityService.instance.disableProtection();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(adaptivePracticeControllerProvider);
 
@@ -53,20 +85,26 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
       _isLoadingAI = false;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Adaptive Practice'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _buildBody(
-                context: context,
-                state: state,
-                question: question,
+    return SecurityOverlay(
+      child: SecureShortcutBlocker(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Adaptive Practice'),
+          ),
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SecureContentWrapper(
+                    child: _buildBody(
+                      context: context,
+                      state: state,
+                      question: question,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

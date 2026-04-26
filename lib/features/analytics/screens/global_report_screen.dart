@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/security/exam_security_service.dart';
+import '../../../core/security/security_overlay.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../models/global_mistake.dart';
 import '../repositories/global_analytics_service.dart';
@@ -30,7 +32,16 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
   @override
   void initState() {
     super.initState();
+    // Enable screen protection for report security
+    ExamSecurityService.instance.enableProtection();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    // Disable screen protection when leaving report
+    ExamSecurityService.instance.disableProtection();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -177,56 +188,62 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Common Mistakes (All Students)'),
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _errorMessage!,
-                        style: theme.textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadData,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Text(
-                          'See what students are getting wrong the most across the entire platform.',
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildSubjectFilterChips(colorScheme),
-                        const SizedBox(height: 14),
-                        _buildPaywallCard(colorScheme),
-                        const SizedBox(height: 14),
-                        ..._buildMistakeCards(
-                          colorScheme: colorScheme,
-                          mistakes: _filteredMistakes,
-                          locked: !_hasPurchased,
-                        ),
-                        if (_filteredMistakes.isEmpty)
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Text(
-                                'No global mistakes found for this subject yet.',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
+    return SecurityOverlay(
+      child: SecureShortcutBlocker(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Common Mistakes (All Students)'),
+          ),
+          body: SafeArea(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            _errorMessage!,
+                            style: theme.textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
                           ),
-                      ],
-                    ),
-                  ),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: SecureContentWrapper(
+                          child: ListView(
+                            padding: const EdgeInsets.all(16),
+                            children: [
+                              Text(
+                                'See what students are getting wrong the most across the entire platform.',
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: 14),
+                              _buildSubjectFilterChips(colorScheme),
+                              const SizedBox(height: 14),
+                              _buildPaywallCard(colorScheme),
+                              const SizedBox(height: 14),
+                              ..._buildMistakeCards(
+                                colorScheme: colorScheme,
+                                mistakes: _filteredMistakes,
+                                locked: !_hasPurchased,
+                              ),
+                              if (_filteredMistakes.isEmpty)
+                                Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(14),
+                                    child: Text(
+                                      'No global mistakes found for this subject yet.',
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+          ),
+        ),
       ),
     );
   }
