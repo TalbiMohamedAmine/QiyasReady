@@ -54,6 +54,8 @@ class PracticeSessionResult {
     required this.userId,
     required this.sessionId,
     required this.statsSynced,
+    required this.questions,
+    required this.answeredOptions,
   });
 
   final int totalQuestions;
@@ -62,6 +64,8 @@ class PracticeSessionResult {
   final String userId;
   final String sessionId;
   final bool statsSynced;
+  final List<PracticeQuestion> questions;
+  final Map<String, String> answeredOptions;
 }
 
 class PracticeState {
@@ -78,6 +82,7 @@ class PracticeState {
     this.sessionId,
     this.answeredCount = 0,
     this.totalDurationSec = 0,
+    this.answeredOptions = const {},
   });
 
   final List<PracticeQuestion> questions;
@@ -92,6 +97,7 @@ class PracticeState {
   final String? sessionId;
   final int answeredCount;
   final int totalDurationSec;
+  final Map<String, String> answeredOptions;
 
   PracticeQuestion? get currentQuestion {
     if (questions.isEmpty ||
@@ -120,6 +126,7 @@ class PracticeState {
     String? sessionId,
     int? answeredCount,
     int? totalDurationSec,
+    Map<String, String>? answeredOptions,
   }) {
     return PracticeState(
       questions: questions ?? this.questions,
@@ -136,6 +143,7 @@ class PracticeState {
       sessionId: sessionId ?? this.sessionId,
       answeredCount: answeredCount ?? this.answeredCount,
       totalDurationSec: totalDurationSec ?? this.totalDurationSec,
+      answeredOptions: answeredOptions ?? this.answeredOptions,
     );
   }
 }
@@ -314,6 +322,7 @@ class PracticeController extends StateNotifier<PracticeState> {
       totalDurationSec: state.totalDurationSec + durationSec,
       isSaving: true,
       clearError: true,
+      answeredOptions: {...state.answeredOptions, question.id: optionId},
     );
 
     try {
@@ -378,6 +387,8 @@ class PracticeController extends StateNotifier<PracticeState> {
       userId: user.uid,
       sessionId: state.sessionId!,
       statsSynced: statsSynced,
+      questions: state.questions,
+      answeredOptions: state.answeredOptions,
     );
   }
 
@@ -840,6 +851,8 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
                                         userId: result.userId,
                                         sessionId: result.sessionId,
                                         statsSynced: result.statsSynced,
+                                        questions: result.questions,
+                                        answeredOptions: result.answeredOptions,
                                       ),
                                     ),
                                   );

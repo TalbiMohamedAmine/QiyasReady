@@ -21,6 +21,8 @@ import '../../../shared/widgets/upgrade_banner.dart';
 import '../../goals/screens/goal_setting_screen.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../leaderboard/screens/leaderboard_screen.dart';
+import '../../../core/security/feature_toggle_provider.dart';
+import '../../offline/services/download_manager.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -65,6 +67,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final plan = planAsync.valueOrNull;
     final isPlanLoading = planAsync.isLoading;
     final isFree = plan?.isFree ?? true;
+    final isBasic = plan == UserPlan.basic;
+    final toggles = ref.watch(featureToggleProvider);
 
     final mockExamCountAsync = ref.watch(mockExamCountProvider);
     final mockExamCount = mockExamCountAsync.valueOrNull ?? 0;
@@ -444,6 +448,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 UpgradeModal.show(context);
                                 return;
                               }
+                              
+                              if (isBasic && mockExamCount >= 5) {
+                                UpgradeModal.show(context);
+                                return;
+                              }
 
                               if (selectedGrade == null) {
                                 ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('Select a grade before starting the mock test.')));
@@ -461,6 +470,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GlobalReportScreen()));
                             },
                           ),
+
                           if (selectedGrade != null) ...[
                             const SizedBox(height: 16),
                             Text(

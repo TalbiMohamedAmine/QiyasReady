@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../adaptive_practice_service.dart';
+import 'practice_review_screen.dart';
+
 class PracticeSummaryScreen extends StatefulWidget {
   const PracticeSummaryScreen({
     super.key,
@@ -10,6 +13,8 @@ class PracticeSummaryScreen extends StatefulWidget {
     required this.userId,
     required this.sessionId,
     required this.statsSynced,
+    required this.questions,
+    required this.answeredOptions,
   });
 
   final int totalQuestions;
@@ -18,6 +23,8 @@ class PracticeSummaryScreen extends StatefulWidget {
   final String userId;
   final String sessionId;
   final bool statsSynced;
+  final List<PracticeQuestion> questions;
+  final Map<String, String> answeredOptions;
 
   @override
   State<PracticeSummaryScreen> createState() => _PracticeSummaryScreenState();
@@ -309,22 +316,7 @@ class _PracticeSummaryScreenState extends State<PracticeSummaryScreen> {
                     ),
                     child: const Text('Back to Dashboard'),
                   ),
-                  const SizedBox(height: 10),
-                  OutlinedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          const SnackBar(
-                            content: Text('Review Mistakes is coming soon.'),
-                          ),
-                        );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                    child: const Text('Review Mistakes'),
-                  ),
+
                 ],
               ),
             ),

@@ -10,6 +10,8 @@ import '../providers/adaptive_practice_provider.dart';
 import '../../subscriptions/providers/subscriptions_provider.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../profile/providers/session_history_provider.dart';
+import '../../../core/security/feature_toggle_provider.dart';
+import 'practice_review_screen.dart';
 
 class PracticeRunnerScreen extends ConsumerStatefulWidget {
   const PracticeRunnerScreen({
@@ -68,6 +70,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(adaptivePracticeControllerProvider);
     final isFree = ref.watch(userPlanProvider).valueOrNull?.isFree ?? true;
+    final toggles = ref.watch(featureToggleProvider);
     
     // Map subject label
     final subjectLabel = state.chapterId == 'chapter_seed_001' 
@@ -116,6 +119,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                       question: question,
                       isFree: isFree,
                       totalAnswered: totalAnswered,
+                      isExpert: toggles.isGlobalMistakesFullyUnlocked,
                     ),
                   ),
                 ),
@@ -133,6 +137,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
     required PracticeQuestion? question,
     required bool isFree,
     required int totalAnswered,
+    required bool isExpert,
   }) {
     switch (state.status) {
       case PracticeLoadStatus.initial:
@@ -166,6 +171,9 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
           answeredCount: state.answeredCount,
           totalQuestions: state.questions.length,
           correctCount: state.correctCount,
+          questions: state.questions,
+          selectedAnswers: state.selectedAnswers,
+          grade: state.selectedGrade,
           onRestart: () {
             ref.read(adaptivePracticeControllerProvider.notifier).loadQuestions(
                   chapterId: widget.chapterId,
@@ -234,6 +242,30 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (isExpert)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.whatshot, size: 16, color: Colors.red),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Global Failure Rate: 68% (Hard)',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Colors.red.shade900,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Text(
                       question.stem,
                       style: Theme.of(context).textTheme.titleMedium,
@@ -639,12 +671,18 @@ class _CompletedView extends StatelessWidget {
     required this.answeredCount,
     required this.totalQuestions,
     required this.correctCount,
+    required this.questions,
+    required this.selectedAnswers,
+    required this.grade,
     required this.onRestart,
   });
 
   final int answeredCount;
   final int totalQuestions;
   final int correctCount;
+  final List<PracticeQuestion> questions;
+  final Map<String, String> selectedAnswers;
+  final String grade;
   final VoidCallback onRestart;
 
   @override
@@ -666,7 +704,24 @@ class _CompletedView extends StatelessWidget {
         Text('Correct: $correctCount / $totalQuestions'),
         Text('Accuracy: $accuracy%'),
         const SizedBox(height: 20),
-        FilledButton(
+        if (questions.isNotEmpty)
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PracticeReviewScreen(
+                    questions: questions,
+                    selectedAnswers: selectedAnswers,
+                    grade: grade,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.rate_review_outlined),
+            label: const Text('Review Answers'),
+          ),
+        const SizedBox(height: 12),
+        OutlinedButton(
           onPressed: onRestart,
           child: const Text('Start Again'),
         ),
