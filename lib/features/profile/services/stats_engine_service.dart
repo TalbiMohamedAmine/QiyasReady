@@ -46,16 +46,17 @@ class StatsEngineService {
         final profile = _readMap(data?['profile']);
         final globalStats = _readMap(profile['global_stats']);
 
-        final previousAnswered = _toInt(globalStats['total_questions_answered']);
+        final previousAnswered =
+            _toInt(globalStats['total_questions_answered']);
         final previousCorrect = _toInt(globalStats['total_correct_answers']);
-        final previousAverageSolveTime = _toDouble(globalStats['avg_solve_time']);
+        final previousAverageSolveTime =
+            _toDouble(globalStats['avg_solve_time']);
 
         final updatedAnswered = previousAnswered + sessionTotals.totalAnswered;
         final updatedCorrect = previousCorrect + sessionTotals.totalCorrect;
-        final sessionAverageSolveTime =
-            sessionTotals.totalAnswered > 0
-                ? sessionTotals.totalTimeSpentSec / sessionTotals.totalAnswered
-                : 0.0;
+        final sessionAverageSolveTime = sessionTotals.totalAnswered > 0
+            ? sessionTotals.totalTimeSpentSec / sessionTotals.totalAnswered
+            : 0.0;
 
         final updatedAverageSolveTime = updatedAnswered > 0
             ? ((previousAverageSolveTime * previousAnswered) +
@@ -69,9 +70,8 @@ class StatsEngineService {
             ...globalStats,
             'total_questions_answered': updatedAnswered,
             'total_correct_answers': updatedCorrect,
-            'overall_accuracy': updatedAnswered > 0
-                ? (updatedCorrect / updatedAnswered)
-                : 0.0,
+            'overall_accuracy':
+                updatedAnswered > 0 ? (updatedCorrect / updatedAnswered) : 0.0,
             'avg_solve_time': updatedAverageSolveTime,
           },
         };

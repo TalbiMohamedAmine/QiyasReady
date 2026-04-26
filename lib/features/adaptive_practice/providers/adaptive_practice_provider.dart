@@ -246,18 +246,18 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
       }
 
       await _ref.read(statsEngineProvider).finalizeSessionAndUpdateStats(
-            currentUser.uid,
-            {
-              'total_questions_answered': state.answeredCount,
-              'correctCount': state.correctCount,
-              'totalTimeSpentSec': state.elapsedSec,
-              'score': {
-                'total': state.answeredCount,
-                'correct': state.correctCount,
-                'wrong': state.answeredCount - state.correctCount,
-              },
-            },
-          );
+        currentUser.uid,
+        {
+          'total_questions_answered': state.answeredCount,
+          'correctCount': state.correctCount,
+          'totalTimeSpentSec': state.elapsedSec,
+          'score': {
+            'total': state.answeredCount,
+            'correct': state.correctCount,
+            'wrong': state.answeredCount - state.correctCount,
+          },
+        },
+      );
 
       state = state.copyWith(
         isSubmitting: false,

@@ -124,7 +124,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
                         ),
                         children: profileAsync.when(
                           loading: () => const [
-                            _StatsLoadingCard(label: 'Total Questions Answered'),
+                            _StatsLoadingCard(
+                                label: 'Total Questions Answered'),
                             _StatsLoadingCard(label: 'Overall Accuracy'),
                             _StatsLoadingCard(label: 'Average Solve Time'),
                           ],
@@ -213,8 +214,9 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             isSelected:
                                 selectedMode == DashboardStudyMode.practice,
                             onTap: () {
-                              ref.read(dashboardStudyModeProvider.notifier).state =
-                                  DashboardStudyMode.practice;
+                              ref
+                                  .read(dashboardStudyModeProvider.notifier)
+                                  .state = DashboardStudyMode.practice;
                             },
                           ),
                           const SizedBox(height: 12),
@@ -223,11 +225,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             description:
                                 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
-                            isSelected:
-                                selectedMode == DashboardStudyMode.mock,
+                            isSelected: selectedMode == DashboardStudyMode.mock,
                             onTap: () {
-                              ref.read(dashboardStudyModeProvider.notifier).state =
-                                  DashboardStudyMode.mock;
+                              ref
+                                  .read(dashboardStudyModeProvider.notifier)
+                                  .state = DashboardStudyMode.mock;
                             },
                           ),
                           const SizedBox(height: 14),
@@ -252,7 +254,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                     ),
                                   )
                                 : Text(
-                                  selectedMode == DashboardStudyMode.practice
+                                    selectedMode == DashboardStudyMode.practice
                                         ? 'Start Practice Mode'
                                         : 'Start Mock Exam',
                                   ),
@@ -464,8 +466,10 @@ class ProfileDashboardScreen extends ConsumerWidget {
                 if (saveState.hasError)
                   Text(
                     'Unable to save grade. Please try again.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.error),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
                     textAlign: TextAlign.start,
                   ),
               ],
@@ -487,9 +491,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
 
     final selectedModeEnum = ref.read(dashboardStudyModeProvider);
 
-    final selectedMode = selectedModeEnum == DashboardStudyMode.practice
-      ? 'practice'
-      : 'mock';
+    final selectedMode =
+        selectedModeEnum == DashboardStudyMode.practice ? 'practice' : 'mock';
 
     final controller = ref.read(adaptivePracticeControllerProvider.notifier);
     final chapterId = selectedModeEnum == DashboardStudyMode.practice
