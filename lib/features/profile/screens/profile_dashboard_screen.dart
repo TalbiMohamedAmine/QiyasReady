@@ -322,20 +322,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: sessions.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemCount: displaySessions.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 8),
+                                separatorBuilder: (_, __) => const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
-                                  final session = sessions[index];
-                                  final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
                                   final session = displaySessions[index];
-                                  final subject = (session['subject']
-                                                  as String?)
-                                              ?.trim()
-                                              .isNotEmpty ==
-                                          true
+                                  final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
                                       ? (session['subject'] as String).trim()
                                       : 'Session';
                                   final scoreMap = session['score'];
