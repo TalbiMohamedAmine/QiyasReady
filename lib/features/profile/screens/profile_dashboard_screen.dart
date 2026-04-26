@@ -22,7 +22,6 @@ import '../../goals/screens/goal_setting_screen.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../leaderboard/screens/leaderboard_screen.dart';
 import '../../../core/security/feature_toggle_provider.dart';
-import '../../offline/services/download_manager.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -326,20 +325,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: sessions.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemCount: displaySessions.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 8),
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, index) {
-                                  final session = sessions[index];
-                                  final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
                                   final session = displaySessions[index];
-                                  final subject = (session['subject']
-                                                  as String?)
-                                              ?.trim()
-                                              .isNotEmpty ==
-                                          true
+                                  final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
                                       ? (session['subject'] as String).trim()
                                       : 'Session';
                                   final scoreMap = session['score'];

@@ -239,15 +239,12 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                         lockedText: 'Upgrade to Basic to access the Common Mistakes Report.',
                         child: RefreshIndicator(
                           onRefresh: _loadData,
+                          color: _C.primary,
                           child: SecureContentWrapper(
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        color: _C.primary,
-                        child: SecureContentWrapper(
-                          child: ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                            children: [
-                              const Text(
+                            child: ListView(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                              children: [
+                                const Text(
                                 'Global Difficulty Insights',
                                 style: TextStyle(
                                   fontSize: 22,
