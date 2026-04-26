@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../mock_exam_service.dart';
+import 'mock_exam_review_screen.dart';
 
 class MockResultScreen extends StatelessWidget {
   const MockResultScreen({super.key, required this.result});
@@ -53,6 +54,21 @@ class MockResultScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    FilledButton.tonalIcon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => MockExamReviewScreen(
+                              userId: result.userId,
+                              sessionId: result.sessionId,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.rate_review_outlined),
+                      label: const Text('Review Answers'),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       'Score',
                       style: theme.textTheme.labelLarge?.copyWith(

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
-import 'practice_summary_screen.dart';
 
 class PracticeRunnerScreen extends ConsumerStatefulWidget {
   const PracticeRunnerScreen({
@@ -41,15 +40,6 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(next.errorMessage!)));
-        }
-
-        final wasCompleted = previous?.status == PracticeLoadStatus.completed;
-        if (!wasCompleted && next.status == PracticeLoadStatus.completed) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => const PracticeSummaryScreen(),
-            ),
-          );
         }
       },
     );
@@ -146,11 +136,13 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
           _isLoadingAI = false;
         }
 
-        final selectedOption = _findOptionById(question.options, selectedOptionId);
+        final selectedOption =
+            _findOptionById(question.options, selectedOptionId);
         final correctOption =
             _findOptionById(question.options, question.correctOptionId);
         final hasAnswered = selectedOption != null;
-        final isCorrect = hasAnswered && selectedOption.id == question.correctOptionId;
+        final isCorrect =
+            hasAnswered && selectedOption.id == question.correctOptionId;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -187,20 +179,17 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                         isCorrect: isCorrect,
                         isLoadingAI: _isLoadingAI,
                         aiExplanation: _aiExplanation,
-                        onAskAiTutor: isCorrect ||
-                                _isLoadingAI ||
-                                selectedOption == null ||
-                                correctOption == null
-                            ? null
-                            : () {
-                                _askAiTutor(
-                                  context: context,
-                                  questionText: question.stem,
-                                  correctAnswer: correctOption.text,
-                                  userAnswer: selectedOption.text,
-                                  grade: state.selectedGrade,
-                                );
-                              },
+                        onAskAiTutor:
+                            isCorrect || _isLoadingAI || correctOption == null
+                                ? null
+                                : () {
+                                    _askAiTutor(
+                                      questionText: question.stem,
+                                      correctAnswer: correctOption.text,
+                                      userAnswer: selectedOption.text,
+                                      grade: state.selectedGrade,
+                                    );
+                                  },
                       ),
                     ],
                   ],
@@ -247,7 +236,6 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
   }
 
   Future<void> _askAiTutor({
-    required BuildContext context,
     required String questionText,
     required String correctAnswer,
     required String userAnswer,
