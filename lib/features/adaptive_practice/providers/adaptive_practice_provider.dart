@@ -245,6 +245,18 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
         );
       }
 
+      await _service.saveSessionResult(
+        uid: currentUser.uid,
+        mode: _mapModeLabel(state.selectedMode),
+        subject: _mapSubjectLabel(
+          mode: state.selectedMode,
+          chapterId: state.chapterId,
+        ),
+        correctAnswers: state.correctCount,
+        totalQuestions: state.answeredCount,
+        durationSec: state.elapsedSec,
+      );
+
       await _ref.read(statsEngineProvider).finalizeSessionAndUpdateStats(
         currentUser.uid,
         {
@@ -307,6 +319,26 @@ class AdaptivePracticeController extends StateNotifier<AdaptivePracticeState> {
   void _cancelTimer() {
     _timer?.cancel();
     _timer = null;
+  }
+
+  String _mapModeLabel(String mode) {
+    return mode.trim().toLowerCase() == 'mock' ? 'Mock' : 'Practice';
+  }
+
+  String _mapSubjectLabel({required String mode, String? chapterId}) {
+    if (mode.trim().toLowerCase() == 'mock') {
+      return 'Full Mock Exam';
+    }
+
+    if (chapterId == 'chapter_seed_001') {
+      return 'Math';
+    }
+
+    if (chapterId != null && chapterId.trim().isNotEmpty) {
+      return chapterId.trim();
+    }
+
+    return 'Practice';
   }
 
   @override
