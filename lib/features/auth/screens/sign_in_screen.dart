@@ -348,7 +348,7 @@ class _SignInScreenState extends State<SignInScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'Email or username',
+              'Email',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -513,10 +513,9 @@ class _SignInScreenState extends State<SignInScreen> {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: isLoading || !_isFormFilled ? null : onTap,
+        onPressed: isLoading ? null : onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _isFormFilled ? _SignInColors.primary : _SignInColors.buttonDisabled,
+          backgroundColor: _SignInColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(

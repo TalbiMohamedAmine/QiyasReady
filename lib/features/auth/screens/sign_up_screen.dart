@@ -161,9 +161,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Widget _buildBackButton() {
-    final backColor = _isBackHovered
-        ? const Color(0xFF0F57D4)
-        : _SignUpColors.textLink;
+    final backColor =
+        _isBackHovered ? const Color(0xFF0F57D4) : _SignUpColors.textLink;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -399,6 +398,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
+      hintText: 'email@example.com',
     );
   }
 
@@ -451,9 +451,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       color: _SignUpColors.textLink,
       fontSize: 13.5,
       fontWeight: FontWeight.w600,
-      decoration: _isLoginHovered
-          ? TextDecoration.underline
-          : TextDecoration.none,
+      decoration:
+          _isLoginHovered ? TextDecoration.underline : TextDecoration.none,
     );
 
     return RichText(
@@ -628,6 +627,7 @@ class _LabeledInputField extends StatelessWidget {
     required this.textInputAction,
     this.obscureText = false,
     this.helperText,
+    this.hintText,
   });
 
   final String label;
@@ -636,6 +636,7 @@ class _LabeledInputField extends StatelessWidget {
   final TextInputAction textInputAction;
   final bool obscureText;
   final String? helperText;
+  final String? hintText;
 
   @override
   Widget build(BuildContext context) {
@@ -672,7 +673,11 @@ class _LabeledInputField extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             filled: true,
             fillColor: Colors.white,
-            hintText: '',
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: _SignUpColors.textMuted,
+              fontSize: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide:
@@ -722,45 +727,38 @@ class _MicrosoftLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return const SizedBox(
       width: 20,
       height: 20,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: const [
-                Expanded(child: _MicrosoftSquare(color: Color(0xFFF25022))),
-                SizedBox(width: 2),
-                Expanded(child: _MicrosoftSquare(color: Color(0xFF7FBA00))),
-              ],
-            ),
-          ),
-          const SizedBox(height: 2),
-          Expanded(
-            child: Row(
-              children: const [
-                Expanded(child: _MicrosoftSquare(color: Color(0xFF00A4EF))),
-                SizedBox(width: 2),
-                Expanded(child: _MicrosoftSquare(color: Color(0xFFFFB900))),
-              ],
-            ),
-          ),
-        ],
+      child: CustomPaint(
+        painter: _MicrosoftLogoPainter(),
       ),
     );
   }
 }
 
-class _MicrosoftSquare extends StatelessWidget {
-  const _MicrosoftSquare({required this.color});
-
-  final Color color;
+class _MicrosoftLogoPainter extends CustomPainter {
+  const _MicrosoftLogoPainter();
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(color: color),
+  void paint(Canvas canvas, Size size) {
+    const gap = 2.0;
+    final square = (size.width - gap) / 2;
+
+    final redPaint = Paint()..color = const Color(0xFFF25022);
+    final greenPaint = Paint()..color = const Color(0xFF7FBA00);
+    final bluePaint = Paint()..color = const Color(0xFF00A4EF);
+    final yellowPaint = Paint()..color = const Color(0xFFFFB900);
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, square, square), redPaint);
+    canvas.drawRect(Rect.fromLTWH(square + gap, 0, square, square), greenPaint);
+    canvas.drawRect(Rect.fromLTWH(0, square + gap, square, square), bluePaint);
+    canvas.drawRect(
+      Rect.fromLTWH(square + gap, square + gap, square, square),
+      yellowPaint,
     );
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
