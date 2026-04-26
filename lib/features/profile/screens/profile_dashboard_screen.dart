@@ -18,6 +18,7 @@ import '../providers/profile_onboarding_provider.dart';
 import '../providers/session_history_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../../../shared/widgets/upgrade_banner.dart';
+import '../../goals/screens/goal_setting_screen.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -106,6 +107,18 @@ class ProfileDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.track_changes),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const GoalSettingScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(

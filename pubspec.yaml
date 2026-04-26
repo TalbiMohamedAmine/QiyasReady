@@ -23,6 +23,8 @@ dependencies:
   crypto: ^3.0.3
   screen_protector: ^1.5.1
   flutter_markdown: ^0.7.6
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
   
 dev_dependencies:
   flutter_test:
