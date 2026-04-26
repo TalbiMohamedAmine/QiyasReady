@@ -5,46 +5,63 @@ import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
 import '../../adaptive_practice/screens/practice_runner_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_onboarding_provider.dart';
+import '../providers/user_profile_provider.dart';
 
 enum DashboardStudyMode { practice, mock }
 
-class ProfileDashboardScreen extends ConsumerStatefulWidget {
+final dashboardStudyModeProvider = StateProvider<DashboardStudyMode>((ref) {
+  return DashboardStudyMode.practice;
+});
+
+final gradeDialogShownProvider = StateProvider<bool>((ref) {
+  return false;
+});
+
+class ProfileDashboardScreen extends ConsumerWidget {
   const ProfileDashboardScreen({super.key});
 
-  @override
-  ConsumerState<ProfileDashboardScreen> createState() =>
-      _ProfileDashboardScreenState();
-}
-
-class _ProfileDashboardScreenState
-    extends ConsumerState<ProfileDashboardScreen> {
   static const _practiceChapterId = 'chapter_seed_001';
   static const _gradeOptions = ['Grade 10', 'Grade 11', 'Grade 12'];
 
-  bool _gradeDialogShown = false;
-  DashboardStudyMode _selectedMode = DashboardStudyMode.practice;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final actionState = ref.watch(authControllerProvider);
     final practiceState = ref.watch(adaptivePracticeControllerProvider);
     final gradeAsync = ref.watch(userGradeProvider);
+    final profileAsync = ref.watch(userProfileStreamProvider);
+    final selectedMode = ref.watch(dashboardStudyModeProvider);
+
+    final totalAnswered = _readIntFromProfile(
+      profileAsync.valueOrNull,
+      'total_questions_answered',
+    );
+    final overallAccuracyRatio = _readDoubleFromProfile(
+      profileAsync.valueOrNull,
+      'overall_accuracy',
+    );
+    final avgSolveTime = _readDoubleFromProfile(
+      profileAsync.valueOrNull,
+      'avg_solve_time',
+    );
+    final overallAccuracyPct = (overallAccuracyRatio * 100).clamp(0, 100);
+    final accuracyLabel = '${overallAccuracyPct.round()}%';
+    final avgSolveLabel = '${avgSolveTime.round()}s';
 
     ref.listen<AsyncValue<UserLifecycleStatus>>(userLifecycleStatusProvider,
         (previous, next) {
-      if (!mounted || _gradeDialogShown) {
+      if (!context.mounted || ref.read(gradeDialogShownProvider)) {
         return;
       }
 
       next.whenData((status) {
         if (status == UserLifecycleStatus.newUser) {
-          _gradeDialogShown = true;
+          ref.read(gradeDialogShownProvider.notifier).state = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) {
+            if (!context.mounted) {
               return;
             }
-            _showGradeSelectionDialog();
+            _showGradeSelectionDialog(context, ref);
           });
         }
       });
@@ -105,29 +122,60 @@ class _ProfileDashboardScreenState
                           crossAxisSpacing: 16,
                           childAspectRatio: isWide ? 1.65 : 2.9,
                         ),
-                        children: const [
-                          StatCard(
-                            label: 'Total Questions Answered',
-                            value: '142',
-                            icon: Icons.quiz_outlined,
-                            accentColor: Color(0xFF0F4C81),
-                            backgroundColor: Color(0xFFEAF3FF),
-                          ),
-                          StatCard(
-                            label: 'Overall Accuracy',
-                            value: '78%',
-                            icon: Icons.track_changes_outlined,
-                            accentColor: Color(0xFF1B7F5B),
-                            backgroundColor: Color(0xFFE7F7F0),
-                          ),
-                          StatCard(
-                            label: 'Average Solve Time',
-                            value: '45s',
-                            icon: Icons.timer_outlined,
-                            accentColor: Color(0xFF2A6F97),
-                            backgroundColor: Color(0xFFEAF6FB),
-                          ),
-                        ],
+                        children: profileAsync.when(
+                          loading: () => const [
+                            _StatsLoadingCard(
+                                label: 'Total Questions Answered'),
+                            _StatsLoadingCard(label: 'Overall Accuracy'),
+                            _StatsLoadingCard(label: 'Average Solve Time'),
+                          ],
+                          error: (_, __) => const [
+                            StatCard(
+                              label: 'Total Questions Answered',
+                              value: '0',
+                              icon: Icons.quiz_outlined,
+                              accentColor: Color(0xFF0F4C81),
+                              backgroundColor: Color(0xFFEAF3FF),
+                            ),
+                            StatCard(
+                              label: 'Overall Accuracy',
+                              value: '0%',
+                              icon: Icons.track_changes_outlined,
+                              accentColor: Color(0xFF1B7F5B),
+                              backgroundColor: Color(0xFFE7F7F0),
+                            ),
+                            StatCard(
+                              label: 'Average Solve Time',
+                              value: '0s',
+                              icon: Icons.timer_outlined,
+                              accentColor: Color(0xFF2A6F97),
+                              backgroundColor: Color(0xFFEAF6FB),
+                            ),
+                          ],
+                          data: (_) => [
+                            StatCard(
+                              label: 'Total Questions Answered',
+                              value: '$totalAnswered',
+                              icon: Icons.quiz_outlined,
+                              accentColor: const Color(0xFF0F4C81),
+                              backgroundColor: const Color(0xFFEAF3FF),
+                            ),
+                            StatCard(
+                              label: 'Overall Accuracy',
+                              value: accuracyLabel,
+                              icon: Icons.track_changes_outlined,
+                              accentColor: const Color(0xFF1B7F5B),
+                              backgroundColor: const Color(0xFFE7F7F0),
+                            ),
+                            StatCard(
+                              label: 'Average Solve Time',
+                              value: avgSolveLabel,
+                              icon: Icons.timer_outlined,
+                              accentColor: const Color(0xFF2A6F97),
+                              backgroundColor: const Color(0xFFEAF6FB),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -164,11 +212,11 @@ class _ProfileDashboardScreenState
                                 'Adaptive question flow for targeted skill-building.',
                             icon: Icons.menu_book_outlined,
                             isSelected:
-                                _selectedMode == DashboardStudyMode.practice,
+                                selectedMode == DashboardStudyMode.practice,
                             onTap: () {
-                              setState(() {
-                                _selectedMode = DashboardStudyMode.practice;
-                              });
+                              ref
+                                  .read(dashboardStudyModeProvider.notifier)
+                                  .state = DashboardStudyMode.practice;
                             },
                           ),
                           const SizedBox(height: 12),
@@ -177,18 +225,21 @@ class _ProfileDashboardScreenState
                             description:
                                 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
-                            isSelected:
-                                _selectedMode == DashboardStudyMode.mock,
+                            isSelected: selectedMode == DashboardStudyMode.mock,
                             onTap: () {
-                              setState(() {
-                                _selectedMode = DashboardStudyMode.mock;
-                              });
+                              ref
+                                  .read(dashboardStudyModeProvider.notifier)
+                                  .state = DashboardStudyMode.mock;
                             },
                           ),
                           const SizedBox(height: 14),
                           FilledButton(
                             onPressed: canStartMode
-                                ? () => _startMode(selectedGrade: selectedGrade)
+                                ? () => _startMode(
+                                      context,
+                                      ref,
+                                      selectedGrade: selectedGrade,
+                                    )
                                 : null,
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
@@ -203,7 +254,7 @@ class _ProfileDashboardScreenState
                                     ),
                                   )
                                 : Text(
-                                    _selectedMode == DashboardStudyMode.practice
+                                    selectedMode == DashboardStudyMode.practice
                                         ? 'Start Practice Mode'
                                         : 'Start Mock Exam',
                                   ),
@@ -363,82 +414,88 @@ class _ProfileDashboardScreenState
     );
   }
 
-  Future<void> _showGradeSelectionDialog() async {
+  Future<void> _showGradeSelectionDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final saveState = ref.watch(gradeSelectionControllerProvider);
-            final isSaving = saveState.isLoading;
+        final saveState = ref.watch(gradeSelectionControllerProvider);
+        final isSaving = saveState.isLoading;
 
-            return WillPopScope(
-              onWillPop: () async => false,
-              child: AlertDialog(
-                title: const Text('Welcome! Select your Grade'),
-                contentPadding:
-                    const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Choose your current grade to personalize practice.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 14),
-                    for (final grade in _gradeOptions)
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(bottom: 10),
-                        child: FilledButton.tonal(
-                          onPressed: isSaving
-                              ? null
-                              : () async {
-                                  final saved = await ref
-                                      .read(
-                                        gradeSelectionControllerProvider
-                                            .notifier,
-                                      )
-                                      .saveGrade(grade);
-
-                                  if (saved && mounted) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                },
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(46),
-                          ),
-                          child: Text(grade),
-                        ),
-                      ),
-                    if (saveState.hasError)
-                      Text(
-                        'Unable to save grade. Please try again.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.error),
-                        textAlign: TextAlign.start,
-                      ),
-                  ],
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text('Welcome! Select your Grade'),
+            contentPadding:
+                const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Choose your current grade to personalize practice.',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 14),
+                for (final grade in _gradeOptions)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(bottom: 10),
+                    child: FilledButton.tonal(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final saved = await ref
+                                  .read(
+                                    gradeSelectionControllerProvider.notifier,
+                                  )
+                                  .saveGrade(grade);
+
+                              if (saved && context.mounted) {
+                                Navigator.of(dialogContext).pop();
+                              }
+                            },
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                      ),
+                      child: Text(grade),
+                    ),
+                  ),
+                if (saveState.hasError)
+                  Text(
+                    'Unable to save grade. Please try again.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
+                    textAlign: TextAlign.start,
+                  ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 
-  Future<void> _startMode({required String? selectedGrade}) async {
+  Future<void> _startMode(
+    BuildContext context,
+    WidgetRef ref, {
+    required String? selectedGrade,
+  }) async {
     if (selectedGrade == null || selectedGrade.trim().isEmpty) {
       return;
     }
 
+    final selectedModeEnum = ref.read(dashboardStudyModeProvider);
+
     final selectedMode =
-        _selectedMode == DashboardStudyMode.practice ? 'practice' : 'mock';
+        selectedModeEnum == DashboardStudyMode.practice ? 'practice' : 'mock';
 
     final controller = ref.read(adaptivePracticeControllerProvider.notifier);
-    final chapterId = _selectedMode == DashboardStudyMode.practice
+    final chapterId = selectedModeEnum == DashboardStudyMode.practice
         ? _practiceChapterId
         : null;
 
@@ -448,13 +505,96 @@ class _ProfileDashboardScreenState
       chapterId: chapterId,
     );
 
-    if (!mounted) {
+    if (!context.mounted) {
       return;
     }
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PracticeRunnerScreen(chapterId: chapterId),
+      ),
+    );
+  }
+}
+
+int _readIntFromProfile(Map<String, dynamic>? profile, String key) {
+  final stats = _readGlobalStats(profile);
+  final value = stats[key];
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.round();
+  }
+  return 0;
+}
+
+double _readDoubleFromProfile(Map<String, dynamic>? profile, String key) {
+  final stats = _readGlobalStats(profile);
+  final value = stats[key];
+  if (value is double) {
+    return value;
+  }
+  if (value is int) {
+    return value.toDouble();
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  return 0.0;
+}
+
+Map<String, dynamic> _readGlobalStats(Map<String, dynamic>? profile) {
+  if (profile == null) {
+    return const <String, dynamic>{};
+  }
+  final stats = profile['global_stats'];
+  if (stats is Map<String, dynamic>) {
+    return stats;
+  }
+  if (stats is Map) {
+    return Map<String, dynamic>.fromEntries(
+      stats.entries.where((entry) => entry.key is String).map(
+            (entry) => MapEntry(entry.key as String, entry.value),
+          ),
+    );
+  }
+  return const <String, dynamic>{};
+}
+
+class _StatsLoadingCard extends StatelessWidget {
+  const _StatsLoadingCard({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

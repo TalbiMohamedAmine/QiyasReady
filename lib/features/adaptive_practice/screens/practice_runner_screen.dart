@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
+import 'practice_summary_screen.dart';
 
 class PracticeRunnerScreen extends ConsumerWidget {
   const PracticeRunnerScreen({
@@ -28,6 +29,15 @@ class PracticeRunnerScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+        }
+
+        final wasCompleted = previous?.status == PracticeLoadStatus.completed;
+        if (!wasCompleted && next.status == PracticeLoadStatus.completed) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => const PracticeSummaryScreen(),
+            ),
+          );
         }
       },
     );
