@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
 import '../../adaptive_practice/screens/subject_selection_screen.dart';
+import '../../analytics/screens/global_report_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mock_exam/screens/mock_exam_screen.dart';
 import '../providers/profile_onboarding_provider.dart';
@@ -297,7 +298,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Pick how you want to study today. Subject Practice is ready now, and Mock Test is coming soon.',
+                            'Pick how you want to study today: practice, full mock, or global insights from all students.',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 14),
@@ -341,6 +342,20 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                   builder: (_) => MockExamScreen(
                                     grade: selectedGrade,
                                   ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _ExamModeActionCard(
+                            title: 'Global Difficulty Report',
+                            description:
+                                'See the most failed questions across all students and learn from them.',
+                            icon: Icons.public_rounded,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const GlobalReportScreen(),
                                 ),
                               );
                             },
