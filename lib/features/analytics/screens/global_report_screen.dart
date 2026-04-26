@@ -241,10 +241,10 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                           onRefresh: _loadData,
                           color: _C.primary,
                           child: SecureContentWrapper(
-                            child: ListView(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                              children: [
-                                const Text(
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                            children: [
+                              const Text(
                                 'Global Difficulty Insights',
                                 style: TextStyle(
                                   fontSize: 22,

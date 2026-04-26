@@ -326,7 +326,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: displaySessions.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                separatorBuilder: (_, __) => const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
                                   final session = displaySessions[index];
                                   final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
