@@ -7,6 +7,7 @@ import '../../adaptive_practice/screens/subject_selection_screen.dart';
 import '../../analytics/screens/global_report_screen.dart';
 import '../../adaptive_practice/screens/practice_runner_screen.dart';
 import '../../onboarding/screens/welcome_screen.dart';
+import '../screens/bookmarked_questions_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mock_exam/screens/mock_exam_screen.dart';
 import '../../subscriptions/providers/subscriptions_provider.dart';
@@ -101,6 +102,19 @@ class ProfileDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const BookmarkedQuestionsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bookmark_rounded),
+            tooltip: 'Saved Questions',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(

@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../practice/services/ai_tutor_service.dart';
+import '../../practice/services/bookmark_service.dart';
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
 import 'practice_summary_screen.dart';
@@ -602,6 +603,14 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         title: Text('${widget.selectedSubject} Practice'),
+        actions: [
+          if (question != null)
+            _BookmarkButton(
+              questionId: question.id,
+              question: question,
+              subject: widget.selectedSubject,
+            ),
+        ],
       ),
       body: SafeArea(
         child: state.isLoading
@@ -980,6 +989,72 @@ class _AnswerOptionCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BookmarkButton extends ConsumerWidget {
+  const _BookmarkButton({
+    required this.questionId,
+    required this.question,
+    required this.subject,
+  });
+
+  final String questionId;
+  final PracticeQuestion question;
+  final String subject;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isBookmarkedAsync = ref.watch(isBookmarkedProvider(questionId));
+    final isBookmarked = isBookmarkedAsync.valueOrNull ?? false;
+
+    return IconButton(
+      onPressed: () async {
+        try {
+          final nowBookmarked = await ref
+              .read(bookmarkServiceProvider)
+              .toggleBookmark(question: question, subject: subject);
+
+          if (!context.mounted) return;
+
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  nowBookmarked
+                      ? 'Question saved for later.'
+                      : 'Bookmark removed.',
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        } catch (error) {
+          if (!context.mounted) return;
+
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(error.toString())),
+            );
+        }
+      },
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        transitionBuilder: (child, animation) => ScaleTransition(
+          scale: animation,
+          child: child,
+        ),
+        child: Icon(
+          isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          key: ValueKey(isBookmarked),
+          color: isBookmarked
+              ? Theme.of(context).colorScheme.primary
+              : null,
+        ),
+      ),
+      tooltip: isBookmarked ? 'Remove bookmark' : 'Save for later',
     );
   }
 }
