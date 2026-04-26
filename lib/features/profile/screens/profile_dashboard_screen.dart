@@ -8,6 +8,7 @@ import '../../analytics/screens/global_report_screen.dart';
 import '../../adaptive_practice/screens/practice_runner_screen.dart';
 import '../../onboarding/screens/welcome_screen.dart';
 import '../screens/bookmarked_questions_screen.dart';
+import '../../practice/services/bookmark_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../mock_exam/screens/mock_exam_screen.dart';
 import '../../subscriptions/providers/subscriptions_provider.dart';
@@ -102,19 +103,6 @@ class ProfileDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const BookmarkedQuestionsScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.bookmark_rounded),
-            tooltip: 'Saved Questions',
-          ),
-        ],
       ),
       body: SafeArea(
         child: Center(
@@ -140,6 +128,9 @@ class ProfileDashboardScreen extends ConsumerWidget {
                       final isWide = constraints.maxWidth >= 720;
                       final crossAxisCount = isWide ? 2 : 1;
 
+                    final bookmarksAsync = ref.watch(bookmarkedQuestionsProvider);
+                    final savedCount = bookmarksAsync.valueOrNull?.length ?? 0;
+
                       return GridView(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -150,33 +141,39 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           childAspectRatio: isWide ? 1.65 : 2.9,
                         ),
                         children: profileAsync.when(
-                          loading: () => const [
-                            _StatsLoadingCard(
+                          loading: () => [
+                            const _StatsLoadingCard(
                                 label: 'Total Questions Answered'),
-                            _StatsLoadingCard(label: 'Overall Accuracy'),
-                            _StatsLoadingCard(label: 'Average Solve Time'),
+                            const _StatsLoadingCard(label: 'Overall Accuracy'),
+                            const _StatsLoadingCard(label: 'Average Solve Time'),
+                            _BookmarkStatCard(
+                              value: '$savedCount',
+                            ),
                           ],
-                          error: (_, __) => const [
-                            StatCard(
+                          error: (_, __) => [
+                            const StatCard(
                               label: 'Total Questions Answered',
                               value: '0',
                               icon: Icons.quiz_outlined,
                               accentColor: Color(0xFF0F4C81),
                               backgroundColor: Color(0xFFEAF3FF),
                             ),
-                            StatCard(
+                            const StatCard(
                               label: 'Overall Accuracy',
                               value: '0%',
                               icon: Icons.track_changes_outlined,
                               accentColor: Color(0xFF1B7F5B),
                               backgroundColor: Color(0xFFE7F7F0),
                             ),
-                            StatCard(
+                            const StatCard(
                               label: 'Average Solve Time',
                               value: '0s',
                               icon: Icons.timer_outlined,
                               accentColor: Color(0xFF2A6F97),
                               backgroundColor: Color(0xFFEAF6FB),
+                            ),
+                            _BookmarkStatCard(
+                              value: '$savedCount',
                             ),
                           ],
                           data: (_) => [
@@ -200,6 +197,9 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               icon: Icons.timer_outlined,
                               accentColor: const Color(0xFF2A6F97),
                               backgroundColor: const Color(0xFFEAF6FB),
+                            ),
+                            _BookmarkStatCard(
+                              value: '$savedCount',
                             ),
                           ],
                         ),
@@ -1075,6 +1075,86 @@ class StatCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookmarkStatCard extends StatelessWidget {
+  const _BookmarkStatCard({
+    required this.value,
+  });
+
+  final String value;
+
+  static const _accentColor = Color(0xFFB36B00);
+  static const _backgroundColor = Color(0xFFFFF4E5);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: _backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const BookmarkedQuestionsScreen(),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.bookmark_rounded, color: _accentColor),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Saved Questions',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: _accentColor.withValues(alpha: 0.82),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      value,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: _accentColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: _accentColor.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
         ),
       ),
     );
