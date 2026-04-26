@@ -208,7 +208,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             loading: () => const Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               ),
                             ),
                             error: (_, __) => Text(
@@ -232,22 +233,28 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: sessions.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
                                   final session = sessions[index];
-                                  final subject =
-                                      (session['subject'] as String?)?.trim().isNotEmpty ==
-                                              true
-                                          ? (session['subject'] as String).trim()
-                                          : 'Session';
+                                  final subject = (session['subject']
+                                                  as String?)
+                                              ?.trim()
+                                              .isNotEmpty ==
+                                          true
+                                      ? (session['subject'] as String).trim()
+                                      : 'Session';
                                   final scoreMap = session['score'];
-                                  final correct = scoreMap is Map<String, dynamic>
-                                      ? _readIntFromMap(scoreMap, 'correct')
-                                      : 0;
+                                  final correct =
+                                      scoreMap is Map<String, dynamic>
+                                          ? _readIntFromMap(scoreMap, 'correct')
+                                          : 0;
                                   final total = scoreMap is Map<String, dynamic>
                                       ? _readIntFromMap(scoreMap, 'total')
-                                      : _readIntFromMap(session, 'total_questions');
-                                  final date = _readSessionDate(session['date']);
+                                      : _readIntFromMap(
+                                          session, 'total_questions');
+                                  final date =
+                                      _readSessionDate(session['date']);
 
                                   return Material(
                                     color: colorScheme.surface,
@@ -264,7 +271,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                         '$subject - $correct/$total - ${_formatActivityDate(date)}',
                                       ),
                                       subtitle: Text(
-                                        (session['mode'] as String?) ?? 'Practice',
+                                        (session['mode'] as String?) ??
+                                            'Practice',
                                       ),
                                     ),
                                   );
