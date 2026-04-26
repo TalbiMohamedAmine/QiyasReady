@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
 import '../../adaptive_practice/screens/subject_selection_screen.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../mock_exam/screens/mock_exam_screen.dart';
 import '../providers/profile_onboarding_provider.dart';
 import '../providers/session_history_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -322,13 +323,26 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 'Simulate full test timing and pressure conditions.',
                             icon: Icons.timer,
                             onTap: () {
-                              ScaffoldMessenger.of(context)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Mock Test is coming soon.'),
+                              if (selectedGrade == null) {
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Select a grade before starting the mock test.',
+                                      ),
+                                    ),
+                                  );
+                                return;
+                              }
+
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => MockExamScreen(
+                                    grade: selectedGrade,
                                   ),
-                                );
+                                ),
+                              );
                             },
                           ),
                           if (selectedGrade != null) ...[
