@@ -2,16 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
-import '../../adaptive_practice/screens/practice_runner_screen.dart';
+import '../../adaptive_practice/screens/subject_selection_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_onboarding_provider.dart';
 import '../providers/user_profile_provider.dart';
-
-enum DashboardStudyMode { practice, mock }
-
-final dashboardStudyModeProvider = StateProvider<DashboardStudyMode>((ref) {
-  return DashboardStudyMode.practice;
-});
 
 final gradeDialogShownProvider = StateProvider<bool>((ref) {
   return false;
@@ -20,17 +14,14 @@ final gradeDialogShownProvider = StateProvider<bool>((ref) {
 class ProfileDashboardScreen extends ConsumerWidget {
   const ProfileDashboardScreen({super.key});
 
-  static const _practiceChapterId = 'chapter_seed_001';
   static const _gradeOptions = ['Grade 10', 'Grade 11', 'Grade 12'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final actionState = ref.watch(authControllerProvider);
-    final practiceState = ref.watch(adaptivePracticeControllerProvider);
     final gradeAsync = ref.watch(userGradeProvider);
     final profileAsync = ref.watch(userProfileStreamProvider);
-    final selectedMode = ref.watch(dashboardStudyModeProvider);
 
     final totalAnswered = _readIntFromProfile(
       profileAsync.valueOrNull,
@@ -89,8 +80,6 @@ class ProfileDashboardScreen extends ConsumerWidget {
     });
 
     final selectedGrade = gradeAsync.valueOrNull;
-    final canStartMode = selectedGrade != null &&
-        practiceState.status != PracticeLoadStatus.loading;
 
     return Scaffold(
       appBar: AppBar(
@@ -202,62 +191,40 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Start quickly with a focused practice session or a full mock exam.',
+                            'Pick how you want to study today. Subject Practice is ready now, and Mock Test is coming soon.',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 14),
-                          _ModePickerCard(
-                            title: 'Practice Mode',
+                          _ExamModeActionCard(
+                            title: 'Subject Practice',
                             description:
-                                'Adaptive question flow for targeted skill-building.',
-                            icon: Icons.menu_book_outlined,
-                            isSelected:
-                                selectedMode == DashboardStudyMode.practice,
+                                'Practice by subject with adaptive question flow.',
+                            icon: Icons.book,
                             onTap: () {
-                              ref
-                                  .read(dashboardStudyModeProvider.notifier)
-                                  .state = DashboardStudyMode.practice;
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => SubjectSelectionScreen(
+                                    selectedGrade: selectedGrade,
+                                  ),
+                                ),
+                              );
                             },
                           ),
                           const SizedBox(height: 12),
-                          _ModePickerCard(
-                            title: 'Mock Exam',
+                          _ExamModeActionCard(
+                            title: 'Mock Test',
                             description:
-                                'Simulate exam conditions with a timed run.',
-                            icon: Icons.fact_check_outlined,
-                            isSelected: selectedMode == DashboardStudyMode.mock,
+                                'Simulate full test timing and pressure conditions.',
+                            icon: Icons.timer,
                             onTap: () {
-                              ref
-                                  .read(dashboardStudyModeProvider.notifier)
-                                  .state = DashboardStudyMode.mock;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          FilledButton(
-                            onPressed: canStartMode
-                                ? () => _startMode(
-                                      context,
-                                      ref,
-                                      selectedGrade: selectedGrade,
-                                    )
-                                : null,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(52),
-                            ),
-                            child: practiceState.status ==
-                                    PracticeLoadStatus.loading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    selectedMode == DashboardStudyMode.practice
-                                        ? 'Start Practice Mode'
-                                        : 'Start Mock Exam',
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Mock Test is coming soon.'),
                                   ),
+                                );
+                            },
                           ),
                           if (selectedGrade != null) ...[
                             const SizedBox(height: 10),
@@ -479,42 +446,6 @@ class ProfileDashboardScreen extends ConsumerWidget {
       },
     );
   }
-
-  Future<void> _startMode(
-    BuildContext context,
-    WidgetRef ref, {
-    required String? selectedGrade,
-  }) async {
-    if (selectedGrade == null || selectedGrade.trim().isEmpty) {
-      return;
-    }
-
-    final selectedModeEnum = ref.read(dashboardStudyModeProvider);
-
-    final selectedMode =
-        selectedModeEnum == DashboardStudyMode.practice ? 'practice' : 'mock';
-
-    final controller = ref.read(adaptivePracticeControllerProvider.notifier);
-    final chapterId = selectedModeEnum == DashboardStudyMode.practice
-        ? _practiceChapterId
-        : null;
-
-    await controller.loadQuestions(
-      selectedGrade: selectedGrade,
-      selectedMode: selectedMode,
-      chapterId: chapterId,
-    );
-
-    if (!context.mounted) {
-      return;
-    }
-
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PracticeRunnerScreen(chapterId: chapterId),
-      ),
-    );
-  }
 }
 
 int _readIntFromProfile(Map<String, dynamic>? profile, String key) {
@@ -733,19 +664,17 @@ class StatCard extends StatelessWidget {
   }
 }
 
-class _ModePickerCard extends StatelessWidget {
-  const _ModePickerCard({
+class _ExamModeActionCard extends StatelessWidget {
+  const _ExamModeActionCard({
     required this.title,
     required this.description,
     required this.icon,
-    required this.isSelected,
     required this.onTap,
   });
 
   final String title;
   final String description;
   final IconData icon;
-  final bool isSelected;
   final VoidCallback onTap;
 
   @override
@@ -753,7 +682,7 @@ class _ModePickerCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: isSelected ? colorScheme.primaryContainer : colorScheme.surface,
+      color: colorScheme.primaryContainer.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -763,9 +692,8 @@ class _ModePickerCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color:
-                  isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-              width: isSelected ? 1.6 : 1,
+              color: colorScheme.primary.withValues(alpha: 0.35),
+              width: 1.2,
             ),
           ),
           child: Row(
@@ -774,10 +702,10 @@ class _ModePickerCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: colorScheme.surface,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: colorScheme.primary),
+                child: Icon(icon, color: colorScheme.onPrimary),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -788,22 +716,23 @@ class _ModePickerCard extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               Icon(
-                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
+                Icons.arrow_forward_rounded,
+                color: colorScheme.primary,
               ),
             ],
           ),

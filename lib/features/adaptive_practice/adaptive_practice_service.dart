@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -31,6 +32,7 @@ class PracticeQuestion {
     required this.chapterId,
     required this.lessonId,
     required this.avgSolveSec,
+    required this.staticExplanation,
     required this.explanationSteps,
   });
 
@@ -41,6 +43,7 @@ class PracticeQuestion {
   final String chapterId;
   final String lessonId;
   final int avgSolveSec;
+  final String staticExplanation;
   final List<String> explanationSteps;
 }
 
@@ -49,6 +52,7 @@ class AdaptivePracticeService {
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
+  final Random _random = Random();
 
   Future<List<PracticeQuestion>> fetchPracticeQuestions({
     String? chapterId,
@@ -84,6 +88,9 @@ class AdaptivePracticeService {
           final data = doc.data();
           final stem = (data['stem'] as String?)?.trim();
           final options = _parseOptions(data['options']);
+          if (options.length > 1) {
+            options.shuffle(_random);
+          }
 
           if (stem == null || stem.isEmpty || options.isEmpty) {
             continue;
@@ -103,6 +110,8 @@ class AdaptivePracticeService {
               chapterId: (data['chapterId'] as String?) ?? '',
               lessonId: (data['lessonId'] as String?) ?? '',
               avgSolveSec: _parseAvgSolveSec(data['avgSolveSec']),
+              staticExplanation:
+                  (data['static_explanation'] as String?)?.trim() ?? '',
               explanationSteps:
                   _parseExplanationSteps(data['explanationSteps']),
             ),
