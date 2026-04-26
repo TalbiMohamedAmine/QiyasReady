@@ -50,6 +50,62 @@ class AdaptivePracticeService {
 
   final FirebaseFirestore _firestore;
 
+  Future<void> saveSessionResult({
+    required String uid,
+    required String mode,
+    required String subject,
+    required int correctAnswers,
+    required int totalQuestions,
+    required int durationSec,
+    String state = 'submitted',
+  }) async {
+    final normalizedUid = uid.trim();
+    if (normalizedUid.isEmpty) {
+      throw const AdaptivePracticeFailure(
+        'Unable to save session results for an empty user id.',
+        code: 'invalid-uid',
+      );
+    }
+
+    if (totalQuestions <= 0) {
+      throw const AdaptivePracticeFailure(
+        'Session must include at least one answered question.',
+        code: 'invalid-session',
+      );
+    }
+
+    try {
+      final sessionRef = _firestore
+          .collection('users')
+          .doc(normalizedUid)
+          .collection('sessions')
+          .doc();
+
+      await sessionRef.set({
+        'date': Timestamp.now(),
+        'mode': mode,
+        'subject': subject,
+        'state': state,
+        'total_questions': totalQuestions,
+        'durationSec': durationSec,
+        'score': {
+          'correct': correctAnswers,
+          'wrong': totalQuestions - correctAnswers,
+          'total': totalQuestions,
+        },
+      });
+    } on FirebaseException catch (e) {
+      throw AdaptivePracticeFailure(
+        e.message ?? 'Failed to save session results.',
+        code: e.code,
+      );
+    } catch (_) {
+      throw const AdaptivePracticeFailure(
+        'Unexpected error while saving session results.',
+      );
+    }
+  }
+
   Future<List<PracticeQuestion>> fetchPracticeQuestions({
     String? chapterId,
     String? lessonId,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../adaptive_practice/providers/adaptive_practice_provider.dart';
 import '../../adaptive_practice/screens/practice_runner_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_onboarding_provider.dart';
+import '../providers/session_history_provider.dart';
 import '../providers/user_profile_provider.dart';
 
 enum DashboardStudyMode { practice, mock }
@@ -30,6 +32,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final practiceState = ref.watch(adaptivePracticeControllerProvider);
     final gradeAsync = ref.watch(userGradeProvider);
     final profileAsync = ref.watch(userProfileStreamProvider);
+    final sessionHistoryAsync = ref.watch(sessionHistoryProvider);
     final selectedMode = ref.watch(dashboardStudyModeProvider);
 
     final totalAnswered = _readIntFromProfile(
@@ -178,6 +181,100 @@ class ProfileDashboardScreen extends ConsumerWidget {
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 20),
+                  Card(
+                    elevation: 0,
+                    color: colorScheme.surfaceContainerHighest,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Recent Activity',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 10),
+                          sessionHistoryAsync.when(
+                            loading: () => const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            error: (_, __) => Text(
+                              'Unable to load recent sessions right now.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: colorScheme.error),
+                            ),
+                            data: (sessions) {
+                              if (sessions.isEmpty) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 4),
+                                  child: Text(
+                                    'No sessions yet. Start your first practice!',
+                                  ),
+                                );
+                              }
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: sessions.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final session = sessions[index];
+                                  final subject =
+                                      (session['subject'] as String?)?.trim().isNotEmpty ==
+                                              true
+                                          ? (session['subject'] as String).trim()
+                                          : 'Session';
+                                  final scoreMap = session['score'];
+                                  final correct = scoreMap is Map<String, dynamic>
+                                      ? _readIntFromMap(scoreMap, 'correct')
+                                      : 0;
+                                  final total = scoreMap is Map<String, dynamic>
+                                      ? _readIntFromMap(scoreMap, 'total')
+                                      : _readIntFromMap(session, 'total_questions');
+                                  final date = _readSessionDate(session['date']);
+
+                                  return Material(
+                                    color: colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: ListTile(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      leading: Icon(
+                                        _subjectIcon(subject),
+                                        color: colorScheme.primary,
+                                      ),
+                                      title: Text(
+                                        '$subject - $correct/$total - ${_formatActivityDate(date)}',
+                                      ),
+                                      subtitle: Text(
+                                        (session['mode'] as String?) ?? 'Practice',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Card(
@@ -560,6 +657,58 @@ Map<String, dynamic> _readGlobalStats(Map<String, dynamic>? profile) {
     );
   }
   return const <String, dynamic>{};
+}
+
+int _readIntFromMap(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.round();
+  }
+  return 0;
+}
+
+DateTime _readSessionDate(dynamic rawDate) {
+  if (rawDate is Timestamp) {
+    return rawDate.toDate();
+  }
+  if (rawDate is DateTime) {
+    return rawDate;
+  }
+  return DateTime.now();
+}
+
+String _formatActivityDate(DateTime date) {
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  final month = months[date.month - 1];
+  return '$month ${date.day}';
+}
+
+IconData _subjectIcon(String subject) {
+  final normalized = subject.toLowerCase();
+  if (normalized.contains('math')) {
+    return Icons.calculate_outlined;
+  }
+  if (normalized.contains('mock')) {
+    return Icons.fact_check_outlined;
+  }
+  return Icons.menu_book_outlined;
 }
 
 class _StatsLoadingCard extends StatelessWidget {
