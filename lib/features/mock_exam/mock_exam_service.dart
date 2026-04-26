@@ -233,77 +233,72 @@ class MockExamService {
     var statsSynced = false;
 
     try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionSnapshot = await transaction.get(sessionRef);
-        final sessionData = sessionSnapshot.data() ?? <String, dynamic>{};
-        final alreadySubmitted = sessionData['state'] == 'submitted';
+      final userSnapshot = await userRef.get();
+      final userData = userSnapshot.data() ?? <String, dynamic>{};
+      final rootGlobalStats = _readMap(userData['global_stats']);
+      final profile = _readMap(userData['profile']);
+      final profileGlobalStats = _readMap(profile['global_stats']);
+      final globalStats =
+          rootGlobalStats.isNotEmpty ? rootGlobalStats : profileGlobalStats;
 
-        debugPrint(
-          'MockExamService.submitExam paths: userRef=${userRef.path}, sessionRef=${sessionRef.path}',
-        );
-        debugPrint(
-            'MockExamService.submitExam session payload: $sessionPayload');
+      final previousAnswered = _toInt(globalStats['total_questions_answered']);
+      final previousCorrect = _toInt(globalStats['total_correct_answers']);
+      final previousTimeSpent = _toInt(globalStats['total_time_spent_sec']);
 
-        transaction.set(
-          sessionRef,
-          sessionPayload,
-          SetOptions(merge: true),
-        );
+      final updatedAnswered = previousAnswered + totalQuestions;
+      final updatedCorrect = previousCorrect + correctAnswers;
+      final updatedTimeSpent = previousTimeSpent + totalTimeSpentSec;
+      final updatedAccuracy = _safeFiniteDouble(
+        updatedAnswered > 0 ? (updatedCorrect / updatedAnswered) : 0.0,
+      );
+      final updatedAverageSolveTime = _safeFiniteDouble(
+        updatedAnswered > 0 ? (updatedTimeSpent / updatedAnswered) : 0.0,
+      );
 
-        if (alreadySubmitted) {
-          return;
-        }
+      final updatedGlobalStats = <String, dynamic>{
+        'overall_accuracy': updatedAccuracy,
+        'avg_solve_time': updatedAverageSolveTime,
+      };
 
-        final userSnapshot = await transaction.get(userRef);
-        final userData = userSnapshot.data() ?? <String, dynamic>{};
-        final rootGlobalStats = _readMap(userData['global_stats']);
-        final profile = _readMap(userData['profile']);
-        final profileGlobalStats = _readMap(profile['global_stats']);
-        final globalStats =
-            rootGlobalStats.isNotEmpty ? rootGlobalStats : profileGlobalStats;
+      if (totalQuestions > 0) {
+        updatedGlobalStats['total_questions_answered'] = FieldValue.increment(totalQuestions);
+      } else if (!globalStats.containsKey('total_questions_answered')) {
+        updatedGlobalStats['total_questions_answered'] = 0;
+      }
 
-        final previousAnswered =
-            _toInt(globalStats['total_questions_answered']);
-        final previousCorrect = _toInt(globalStats['total_correct_answers']);
-        final previousTimeSpent = _toInt(globalStats['total_time_spent_sec']);
+      if (correctAnswers > 0) {
+        updatedGlobalStats['total_correct_answers'] = FieldValue.increment(correctAnswers);
+      } else if (!globalStats.containsKey('total_correct_answers')) {
+        updatedGlobalStats['total_correct_answers'] = 0;
+      }
 
-        final updatedAnswered = previousAnswered + totalQuestions;
-        final updatedCorrect = previousCorrect + correctAnswers;
-        final updatedTimeSpent = previousTimeSpent + totalTimeSpentSec;
-        final updatedAccuracy = _safeFiniteDouble(
-          updatedAnswered > 0 ? (updatedCorrect / updatedAnswered) : 0.0,
-        );
-        final updatedAverageSolveTime = _safeFiniteDouble(
-          updatedAnswered > 0 ? (updatedTimeSpent / updatedAnswered) : 0.0,
-        );
+      if (totalTimeSpentSec > 0) {
+        updatedGlobalStats['total_time_spent_sec'] = FieldValue.increment(totalTimeSpentSec);
+      } else if (!globalStats.containsKey('total_time_spent_sec')) {
+        updatedGlobalStats['total_time_spent_sec'] = 0;
+      }
 
-        final updatedGlobalStats = <String, dynamic>{
-          ...globalStats,
-          'total_questions_answered': FieldValue.increment(totalQuestions),
-          'total_correct_answers': FieldValue.increment(correctAnswers),
-          'total_time_spent_sec': FieldValue.increment(totalTimeSpentSec),
-          'overall_accuracy': updatedAccuracy,
-          'avg_solve_time': updatedAverageSolveTime,
-        };
-
-        final userPayload = <String, dynamic>{
+      final userPayload = <String, dynamic>{
+        'global_stats': updatedGlobalStats,
+        'profile': {
+          ...profile,
           'global_stats': updatedGlobalStats,
-          'profile': {
-            ...profile,
-            'global_stats': updatedGlobalStats,
-          },
-        };
+        },
+      };
 
-        debugPrint('MockExamService.submitExam user payload: $userPayload');
+      debugPrint(
+        'MockExamService.submitExam paths: userRef=${userRef.path}, sessionRef=${sessionRef.path}',
+      );
+      debugPrint(
+          'MockExamService.submitExam session payload: $sessionPayload');
+      debugPrint('MockExamService.submitExam user payload: $userPayload');
 
-        transaction.set(
-          userRef,
-          userPayload,
-          SetOptions(merge: true),
-        );
+      final batch = _firestore.batch();
+      batch.set(sessionRef, sessionPayload, SetOptions(merge: true));
+      batch.set(userRef, userPayload, SetOptions(merge: true));
+      await batch.commit();
 
-        statsSynced = true;
-      });
+      statsSynced = true;
     } on FirebaseException catch (error, stackTrace) {
       debugPrint(
           'MockExamService.submitExam Firebase error: ${error.toString()}');
@@ -377,17 +372,24 @@ class MockExamService {
     required int totalTimeSpentSec,
   }) async {
     try {
-      final statsPayload = <String, dynamic>{
-        'total_questions_answered': FieldValue.increment(totalQuestions),
-        'total_correct_answers': FieldValue.increment(correctAnswers),
-        'total_time_spent_sec': FieldValue.increment(totalTimeSpentSec),
-      };
+      final statsPayload = <String, dynamic>{};
+      if (totalQuestions > 0) {
+        statsPayload['total_questions_answered'] = FieldValue.increment(totalQuestions);
+      }
+      if (correctAnswers > 0) {
+        statsPayload['total_correct_answers'] = FieldValue.increment(correctAnswers);
+      }
+      if (totalTimeSpentSec > 0) {
+        statsPayload['total_time_spent_sec'] = FieldValue.increment(totalTimeSpentSec);
+      }
 
       final userPayload = <String, dynamic>{
-        'global_stats': statsPayload,
-        'profile': {
+        if (statsPayload.isNotEmpty) ...{
           'global_stats': statsPayload,
-        },
+          'profile': {
+            'global_stats': statsPayload,
+          },
+        }
       };
 
       debugPrint(
@@ -400,7 +402,9 @@ class MockExamService {
 
       final batch = _firestore.batch();
       batch.set(sessionRef, sessionPayload, SetOptions(merge: true));
-      batch.set(userRef, userPayload, SetOptions(merge: true));
+      if (userPayload.isNotEmpty) {
+        batch.set(userRef, userPayload, SetOptions(merge: true));
+      }
       await batch.commit();
 
       return true;

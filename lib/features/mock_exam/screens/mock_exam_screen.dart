@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/security/exam_security_service.dart';
+import '../../../core/security/security_overlay.dart';
 import '../mock_exam_service.dart';
 import '../providers/mock_exam_provider.dart';
 import 'mock_result_screen.dart';
@@ -26,6 +29,8 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen>
     _args = MockExamArgs(grade: widget.grade);
     WidgetsBinding.instance.addObserver(this);
 
+    _activateSecurityOrExit();
+
     ref.listenManual<MockExamState>(mockExamControllerProvider(_args),
         (previous, next) {
       if (next.status == MockExamStatus.finished && next.result != null) {
@@ -42,8 +47,27 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen>
     });
   }
 
+  Future<void> _activateSecurityOrExit() async {
+    final isSecured = await ExamSecurityService.instance.enableProtection();
+    if (isSecured || !mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Secure Exam Mode is unavailable on this device.'),
+        ),
+      );
+
+    Navigator.of(context).maybePop();
+  }
+
   @override
   void dispose() {
+    // Disable screen protection when leaving exam
+    ExamSecurityService.instance.disableProtection();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -57,23 +81,32 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen>
       return;
     }
 
-    if (!_showedLifecycleWarning &&
-        (state == AppLifecycleState.inactive ||
-            state == AppLifecycleState.paused ||
-            state == AppLifecycleState.hidden)) {
+    final movedToBackground = state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden;
+
+    if (!movedToBackground || !mounted) {
+      return;
+    }
+
+    if (kIsWeb) {
+      return;
+    }
+
+    if (!_showedLifecycleWarning) {
       _showedLifecycleWarning = true;
-      if (!mounted) {
-        return;
-      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Mock exam is running. Stay on the screen until you submit.',
+            'Mock exam is running. Leaving the app again will forfeit and submit.',
           ),
           duration: Duration(seconds: 3),
         ),
       );
+      return;
     }
+
+    _submitExamAndNavigate();
   }
 
   @override
@@ -82,47 +115,56 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen>
 
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Mock Exam - ${widget.grade}'),
-          actions: [
-            Builder(
-              builder: (context) => IconButton(
-                tooltip: 'Exam actions',
-                onPressed: () => Scaffold.of(context).openEndDrawer(),
-                icon: const Icon(Icons.menu_open_rounded),
-              ),
+      child: SecurityOverlay(
+        child: SecureShortcutBlocker(
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('Mock Exam - ${widget.grade}'),
+              actions: [
+                Builder(
+                  builder: (context) => IconButton(
+                    tooltip: 'Exam actions',
+                    onPressed: () => Scaffold.of(context).openEndDrawer(),
+                    icon: const Icon(Icons.menu_open_rounded),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        endDrawer: _MockExamDrawer(
-          state: state,
-          onSubmit: _submitExamAndNavigate,
-          onForfeit: _confirmForfeit,
-        ),
-        body: SafeArea(
-          child: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : state.errorMessage != null && state.questions.isEmpty
-                  ? _MockExamErrorView(
-                      message: state.errorMessage!,
-                      onDismiss: () => Navigator.of(context).pop(),
-                    )
-                  : _MockExamBody(
-                      state: state,
-                      onSelectOption: (optionId) => ref
-                          .read(mockExamControllerProvider(_args).notifier)
-                          .selectOption(optionId),
-                      onNext: () => ref
-                          .read(mockExamControllerProvider(_args).notifier)
-                          .nextQuestion(),
-                      onPrevious: () => ref
-                          .read(mockExamControllerProvider(_args).notifier)
-                          .previousQuestion(),
-                      onSubmit: () {
-                        _submitExamAndNavigate();
-                      },
-                    ),
+            endDrawer: _MockExamDrawer(
+              state: state,
+              onSubmit: _submitExamAndNavigate,
+              onForfeit: _confirmForfeit,
+            ),
+            body: SafeArea(
+              child: state.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.errorMessage != null && state.questions.isEmpty
+                      ? _MockExamErrorView(
+                          message: state.errorMessage!,
+                          onDismiss: () => Navigator.of(context).pop(),
+                        )
+                      : SecureContentWrapper(
+                          child: _MockExamBody(
+                            state: state,
+                            onSelectOption: (optionId) => ref
+                                .read(
+                                    mockExamControllerProvider(_args).notifier)
+                                .selectOption(optionId),
+                            onNext: () => ref
+                                .read(
+                                    mockExamControllerProvider(_args).notifier)
+                                .nextQuestion(),
+                            onPrevious: () => ref
+                                .read(
+                                    mockExamControllerProvider(_args).notifier)
+                                .previousQuestion(),
+                            onSubmit: () {
+                              _submitExamAndNavigate();
+                            },
+                          ),
+                        ),
+            ),
+          ),
         ),
       ),
     );
