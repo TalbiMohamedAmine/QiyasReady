@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../practice/services/ai_tutor_service.dart';
@@ -199,6 +200,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                                   correctAnswer: correctOption.text,
                                   userAnswer: selectedOption.text,
                                   grade: state.selectedGrade,
+                                  isCorrect: isCorrect,
                                 );
                               },
                       ),
@@ -252,6 +254,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
     required String correctAnswer,
     required String userAnswer,
     required String grade,
+    required bool isCorrect,
   }) async {
     setState(() {
       _isLoadingAI = true;
@@ -264,6 +267,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
             correctAnswer: correctAnswer,
             userAnswer: userAnswer,
             grade: grade,
+            isCorrect: isCorrect,
           );
 
       if (!mounted) {
@@ -384,9 +388,15 @@ class _AnswerFeedbackCard extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFB5CCF5)),
               ),
               padding: const EdgeInsets.all(12),
-              child: Text(
-                aiExplanation!,
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: MarkdownBody(
+                  data: aiExplanation!,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
               ),
             ),
           ],
