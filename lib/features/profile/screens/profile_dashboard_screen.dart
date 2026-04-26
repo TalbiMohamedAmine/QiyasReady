@@ -24,6 +24,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final actionState = ref.watch(authControllerProvider);
     final gradeAsync = ref.watch(userGradeProvider);
     final profileAsync = ref.watch(userProfileStreamProvider);
+    final sessionHistoryAsync = ref.watch(sessionHistoryProvider);
 
     final totalAnswered = _readIntFromProfile(
       profileAsync.valueOrNull,
