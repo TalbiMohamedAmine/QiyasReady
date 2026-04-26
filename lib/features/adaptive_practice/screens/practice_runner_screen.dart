@@ -10,6 +10,7 @@ import '../providers/adaptive_practice_provider.dart';
 import '../../subscriptions/providers/subscriptions_provider.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../profile/providers/session_history_provider.dart';
+import '../../../core/security/feature_toggle_provider.dart';
 
 class PracticeRunnerScreen extends ConsumerStatefulWidget {
   const PracticeRunnerScreen({
@@ -68,6 +69,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(adaptivePracticeControllerProvider);
     final isFree = ref.watch(userPlanProvider).valueOrNull?.isFree ?? true;
+    final toggles = ref.watch(featureToggleProvider);
     
     // Map subject label
     final subjectLabel = state.chapterId == 'chapter_seed_001' 
@@ -116,6 +118,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                       question: question,
                       isFree: isFree,
                       totalAnswered: totalAnswered,
+                      isExpert: toggles.isGlobalMistakesFullyUnlocked,
                     ),
                   ),
                 ),
@@ -133,6 +136,7 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
     required PracticeQuestion? question,
     required bool isFree,
     required int totalAnswered,
+    required bool isExpert,
   }) {
     switch (state.status) {
       case PracticeLoadStatus.initial:
@@ -234,6 +238,30 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (isExpert)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.whatshot, size: 16, color: Colors.red),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Global Failure Rate: 68% (Hard)',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Colors.red.shade900,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Text(
                       question.stem,
                       style: Theme.of(context).textTheme.titleMedium,

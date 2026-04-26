@@ -21,6 +21,8 @@ import '../../../shared/widgets/upgrade_banner.dart';
 import '../../goals/screens/goal_setting_screen.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../leaderboard/screens/leaderboard_screen.dart';
+import '../../../core/security/feature_toggle_provider.dart';
+import '../../practice/screens/customized_test_screen.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -52,6 +54,8 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final plan = planAsync.valueOrNull;
     final isPlanLoading = planAsync.isLoading;
     final isFree = plan?.isFree ?? true;
+    final isBasic = plan == UserPlan.basic;
+    final toggles = ref.watch(featureToggleProvider);
 
     final mockExamCountAsync = ref.watch(mockExamCountProvider);
     final mockExamCount = mockExamCountAsync.valueOrNull ?? 0;
@@ -420,6 +424,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 UpgradeModal.show(context);
                                 return;
                               }
+                              
+                              if (isBasic && mockExamCount >= 5) {
+                                UpgradeModal.show(context);
+                                return;
+                              }
 
                               if (selectedGrade == null) {
                                 ScaffoldMessenger.of(context)
@@ -453,6 +462,24 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => const GlobalReportScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _ExamModeActionCard(
+                            title: 'Customized Tests',
+                            description: 'Generate specific tests by chapters, difficulty, and question count.',
+                            icon: Icons.tune_rounded,
+                            onTap: () {
+                              if (!toggles.hasPurchasedReport) { // Expert check
+                                UpgradeModal.show(context);
+                                return;
+                              }
+                              
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const CustomizedTestScreen(),
                                 ),
                               );
                             },
