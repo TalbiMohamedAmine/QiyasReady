@@ -9,6 +9,7 @@ import '../../../core/security/security_overlay.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../models/global_mistake.dart';
 import '../repositories/global_analytics_service.dart';
+import '../../subscriptions/widgets/feature_lock.dart';
 
 // ─── Colors ────────────────────────────────────────────────────────────────
 class _C {
@@ -234,6 +235,11 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                           ),
                         ),
                       )
+                    : FeatureLock(
+                        lockedText: 'Upgrade to Basic to access the Common Mistakes Report.',
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: SecureContentWrapper(
                     : RefreshIndicator(
                         onRefresh: _loadData,
                         color: _C.primary,
@@ -286,6 +292,7 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
                           ),
                         ),
                       ),
+                    ),
           ),
         ),
       ),

@@ -7,6 +7,9 @@ import '../../../core/security/security_overlay.dart';
 import '../../practice/services/ai_tutor_service.dart';
 import '../adaptive_practice_service.dart';
 import '../providers/adaptive_practice_provider.dart';
+import '../../subscriptions/providers/subscriptions_provider.dart';
+import '../../subscriptions/widgets/upgrade_modal.dart';
+import '../../profile/providers/session_history_provider.dart';
 
 class PracticeRunnerScreen extends ConsumerStatefulWidget {
   const PracticeRunnerScreen({
@@ -64,6 +67,15 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(adaptivePracticeControllerProvider);
+    final isFree = ref.watch(userPlanProvider).valueOrNull?.isFree ?? true;
+    
+    // Map subject label
+    final subjectLabel = state.chapterId == 'chapter_seed_001' 
+        ? 'Math' 
+        : (state.chapterId != null && state.chapterId!.trim().isNotEmpty ? state.chapterId!.trim() : 'Practice');
+    final subjectCountAsync = ref.watch(subjectQuestionsCountProvider(subjectLabel));
+    final pastCount = subjectCountAsync.valueOrNull ?? 0;
+    final totalAnswered = pastCount + state.answeredCount;
 
     ref.listen<AdaptivePracticeState>(
       adaptivePracticeControllerProvider,
@@ -102,6 +114,8 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                       context: context,
                       state: state,
                       question: question,
+                      isFree: isFree,
+                      totalAnswered: totalAnswered,
                     ),
                   ),
                 ),
@@ -117,6 +131,8 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
     required BuildContext context,
     required AdaptivePracticeState state,
     required PracticeQuestion? question,
+    required bool isFree,
+    required int totalAnswered,
   }) {
     switch (state.status) {
       case PracticeLoadStatus.initial:
@@ -182,10 +198,31 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
         final hasAnswered = selectedOption != null;
         final isCorrect =
             hasAnswered && selectedOption.id == question.correctOptionId;
+            
+        final isLimitReached = isFree && totalAnswered >= 10;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isFree) ...[
+              LinearProgressIndicator(
+                value: (totalAnswered / 10).clamp(0.0, 1.0),
+                backgroundColor: Colors.grey.shade200,
+                color: totalAnswered >= 10 ? Colors.red : Colors.blue,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isLimitReached 
+                    ? 'Free limit reached ($totalAnswered/10)' 
+                    : '$totalAnswered/10 Free Questions Used',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isLimitReached ? Colors.red : Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             _PracticeHeader(
               currentIndex: state.currentQuestionIndex + 1,
               totalQuestions: state.questions.length,
@@ -239,25 +276,50 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 48,
-              child: FilledButton(
-                onPressed: state.isSubmitting
-                    ? null
-                    : () {
-                        ref
-                            .read(adaptivePracticeControllerProvider.notifier)
-                            .nextQuestion();
-                      },
-                child: state.isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(state.isLastQuestion ? 'Submit' : 'Next'),
+            if (isLimitReached)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'You have reached the free limit for this subject.',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => UpgradeModal.show(context),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                      child: const Text('Upgrade to Continue'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                height: 48,
+                child: FilledButton(
+                  onPressed: state.isSubmitting
+                      ? null
+                      : () {
+                          ref
+                              .read(adaptivePracticeControllerProvider.notifier)
+                              .nextQuestion();
+                        },
+                  child: state.isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(state.isLastQuestion ? 'Submit' : 'Next'),
+                ),
               ),
-            ),
           ],
         );
     }

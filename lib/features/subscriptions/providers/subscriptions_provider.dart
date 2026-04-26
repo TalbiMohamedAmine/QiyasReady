@@ -80,7 +80,7 @@ class SubscriptionsController
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .set({'plan': planName.toLowerCase()}, SetOptions(merge: true));
+          .set({'user_tier': planName.toLowerCase()}, SetOptions(merge: true));
 
       final assignedPlan = UserPlan.values.firstWhere(
         (p) => p.name == planName.toLowerCase(),
@@ -148,7 +148,7 @@ final userPlanProvider = StreamProvider<UserPlan>((ref) {
           .doc(uid)
           .snapshots()
           .map((snap) {
-        final planStr = snap.data()?['plan'] as String? ?? 'beginner';
+        final planStr = snap.data()?['user_tier'] as String? ?? 'beginner';
         return UserPlan.values.firstWhere(
           (p) => p.name == planStr,
           orElse: () => UserPlan.beginner,
@@ -171,7 +171,7 @@ Future<void> assignPlanDirect(String planName) async {
   await FirebaseFirestore.instance
       .collection('users')
       .doc(uid)
-      .set({'plan': planName.toLowerCase()}, SetOptions(merge: true));
+      .set({'user_tier': planName.toLowerCase()}, SetOptions(merge: true));
 }
 // Stores the plan the user tapped before signing up (null = no pending plan)
 final pendingPlanProvider = StateProvider<String?>((ref) => null);

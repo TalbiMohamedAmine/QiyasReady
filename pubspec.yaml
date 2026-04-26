@@ -25,6 +25,10 @@ dependencies:
   flutter_markdown: ^0.7.6
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
+  fl_chart: ^0.68.0
+  connectivity_plus: ^6.0.3
+  purchases_flutter: ^7.2.1
+  firebase_messaging: ^14.7.13
   
 dev_dependencies:
   flutter_test:
