@@ -31,6 +31,19 @@ final gradeDialogShownProvider = StateProvider<Set<String>>((ref) {
   return <String>{};
 });
 
+// ─── Colors ────────────────────────────────────────────────────────────────
+class _C {
+  static const primary       = Color(0xFF1A6BFF);
+  static const primaryLight  = Color(0xFFE8F0FF);
+  static const bg            = Color(0xFFFFFFFF);
+  static const surface       = Color(0xFFF7F8FC);
+  static const textPrimary   = Color(0xFF1A1A2E);
+  static const textMuted     = Color(0xFF6B7280);
+  static const border        = Color(0xFFE0E0E0);
+  static const cardBg        = Color(0xFFFFFFFF);
+  static const dark          = Color(0xFF1A1A2E);
+}
+
 class ProfileDashboardScreen extends ConsumerWidget {
   const ProfileDashboardScreen({super.key});
 
@@ -105,12 +118,27 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final selectedGrade = gradeAsync.valueOrNull;
 
     return Scaffold(
+      backgroundColor: _C.surface,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            color: _C.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: _C.bg,
+        elevation: 0,
         centerTitle: false,
+        iconTheme: const IconThemeData(color: _C.textPrimary),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: _C.border, height: 1),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.leaderboard_outlined),
+            icon: const Icon(Icons.leaderboard_outlined, color: _C.textPrimary),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -120,7 +148,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.track_changes),
+            icon: const Icon(Icons.track_changes, color: _C.textPrimary),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -165,7 +193,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           crossAxisCount: crossAxisCount,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
-                          childAspectRatio: isWide ? 1.65 : 2.9,
+                          childAspectRatio: isWide ? 1.4 : 2.5,
                         ),
                         children: profileAsync.when(
                           loading: () => [
@@ -182,22 +210,22 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               label: 'Total Questions Answered',
                               value: '0',
                               icon: Icons.quiz_outlined,
-                              accentColor: Color(0xFF0F4C81),
-                              backgroundColor: Color(0xFFEAF3FF),
+                              accentColor: _C.primary,
+                              backgroundColor: Colors.transparent,
                             ),
                             const StatCard(
                               label: 'Overall Accuracy',
                               value: '0%',
                               icon: Icons.track_changes_outlined,
-                              accentColor: Color(0xFF1B7F5B),
-                              backgroundColor: Color(0xFFE7F7F0),
+                              accentColor: Color(0xFF10B981),
+                              backgroundColor: Colors.transparent,
                             ),
                             const StatCard(
                               label: 'Average Solve Time',
                               value: '0s',
                               icon: Icons.timer_outlined,
-                              accentColor: Color(0xFF2A6F97),
-                              backgroundColor: Color(0xFFEAF6FB),
+                              accentColor: Color(0xFF8B5CF6),
+                              backgroundColor: Colors.transparent,
                             ),
                             _BookmarkStatCard(
                               value: '$savedCount',
@@ -208,22 +236,22 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               label: 'Total Questions Answered',
                               value: '$totalAnswered',
                               icon: Icons.quiz_outlined,
-                              accentColor: const Color(0xFF0F4C81),
-                              backgroundColor: const Color(0xFFEAF3FF),
+                              accentColor: _C.primary,
+                              backgroundColor: Colors.transparent,
                             ),
                             StatCard(
                               label: 'Overall Accuracy',
                               value: accuracyLabel,
                               icon: Icons.track_changes_outlined,
-                              accentColor: const Color(0xFF1B7F5B),
-                              backgroundColor: const Color(0xFFE7F7F0),
+                              accentColor: const Color(0xFF10B981),
+                              backgroundColor: Colors.transparent,
                             ),
                             StatCard(
                               label: 'Average Solve Time',
                               value: avgSolveLabel,
                               icon: Icons.timer_outlined,
-                              accentColor: const Color(0xFF2A6F97),
-                              backgroundColor: const Color(0xFFEAF6FB),
+                              accentColor: const Color(0xFF8B5CF6),
+                              backgroundColor: Colors.transparent,
                             ),
                             _BookmarkStatCard(
                               value: '$savedCount',
@@ -234,48 +262,51 @@ class ProfileDashboardScreen extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(height: 20),
-                  Card(
-                    elevation: 0,
-                    color: colorScheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _C.cardBg,
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: colorScheme.outlineVariant),
+                      border: Border.all(color: _C.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x04000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        )
+                      ],
                     ),
                     child: Padding(
-                      padding:
-                          const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
+                          const Text(
                             'Recent Activity',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: _C.textPrimary,
+                            ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
                           sessionHistoryAsync.when(
                             loading: () => const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                              padding: EdgeInsets.symmetric(vertical: 24),
                               child: Center(
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: _C.primary),
                               ),
                             ),
-                            error: (_, __) => Text(
+                            error: (_, __) => const Text(
                               'Unable to load recent sessions right now.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: colorScheme.error),
+                              style: TextStyle(color: Colors.red, fontSize: 14),
                             ),
                             data: (sessions) {
                               if (sessions.isEmpty) {
                                 return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4),
+                                  padding: EdgeInsets.symmetric(vertical: 12),
                                   child: Text(
                                     'No sessions yet. Start your first practice!',
+                                    style: TextStyle(color: _C.textMuted, fontSize: 14),
                                   ),
                                 );
                               }
@@ -284,46 +315,41 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: sessions.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 8),
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, index) {
                                   final session = sessions[index];
-                                  final subject = (session['subject']
-                                                  as String?)
-                                              ?.trim()
-                                              .isNotEmpty ==
-                                          true
+                                  final subject = (session['subject'] as String?)?.trim().isNotEmpty == true
                                       ? (session['subject'] as String).trim()
                                       : 'Session';
                                   final scoreMap = session['score'];
-                                  final correct =
-                                      scoreMap is Map<String, dynamic>
-                                          ? _readIntFromMap(scoreMap, 'correct')
-                                          : 0;
-                                  final total = scoreMap is Map<String, dynamic>
-                                      ? _readIntFromMap(scoreMap, 'total')
-                                      : _readIntFromMap(
-                                          session, 'total_questions');
-                                  final date =
-                                      _readSessionDate(session['date']);
+                                  final correct = scoreMap is Map<String, dynamic> ? _readIntFromMap(scoreMap, 'correct') : 0;
+                                  final total = scoreMap is Map<String, dynamic> ? _readIntFromMap(scoreMap, 'total') : _readIntFromMap(session, 'total_questions');
+                                  final date = _readSessionDate(session['date']);
 
-                                  return Material(
-                                    color: colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(14),
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: _C.surface,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: _C.border),
+                                    ),
                                     child: ListTile(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      leading: Icon(
-                                        _subjectIcon(subject),
-                                        color: colorScheme.primary,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: _C.primaryLight,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(_subjectIcon(subject), color: _C.primary),
                                       ),
                                       title: Text(
                                         '$subject - $correct/$total - ${_formatActivityDate(date)}',
+                                        style: const TextStyle(fontWeight: FontWeight.w600, color: _C.textPrimary, fontSize: 14),
                                       ),
                                       subtitle: Text(
-                                        (session['mode'] as String?) ??
-                                            'Practice',
+                                        (session['mode'] as String?) ?? 'Practice',
+                                        style: const TextStyle(color: _C.textMuted, fontSize: 13),
                                       ),
                                     ),
                                   );
@@ -336,101 +362,74 @@ class ProfileDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Card(
-                    elevation: 0,
-                    color: colorScheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _C.cardBg,
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: colorScheme.outlineVariant),
+                      border: Border.all(color: _C.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x04000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        )
+                      ],
                     ),
                     child: Padding(
-                      padding:
-                          const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
+                          const Text(
                             'Choose Your Study Mode',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: _C.textPrimary,
+                            ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Pick how you want to study today: practice, full mock, or global insights from all students.',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: TextStyle(color: _C.textMuted, fontSize: 14, height: 1.5),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 20),
                           _ExamModeActionCard(
                             title: 'Subject Practice',
-                            description:
-                                'Practice by subject with adaptive question flow.',
+                            description: 'Practice by subject with adaptive question flow.',
                             icon: Icons.book,
                             onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => SubjectSelectionScreen(
-                                    selectedGrade: selectedGrade,
-                                  ),
-                                ),
-                              );
+                              Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SubjectSelectionScreen(selectedGrade: selectedGrade)));
                             },
                           ),
                           const SizedBox(height: 12),
                           _ExamModeActionCard(
                             title: 'Mock Test',
-                            description:
-                                'Simulate exam conditions with a timed run.',
+                            description: 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
                             isSelected: selectedMode == DashboardStudyMode.mock,
                             onTap: () {
                               if (selectedGrade == null) {
-                                ScaffoldMessenger.of(context)
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Select a grade before starting the mock test.',
-                                      ),
-                                    ),
-                                  );
+                                ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('Select a grade before starting the mock test.')));
                                 return;
                               }
-
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => MockExamScreen(
-                                    grade: selectedGrade,
-                                  ),
-                                ),
-                              );
+                              Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MockExamScreen(grade: selectedGrade)));
                             },
                           ),
                           const SizedBox(height: 12),
                           _ExamModeActionCard(
                             title: 'Global Difficulty Report',
-                            description:
-                                'See the most failed questions across all students and learn from them.',
+                            description: 'See the most failed questions across all students and learn from them.',
                             icon: Icons.public_rounded,
                             onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const GlobalReportScreen(),
-                                ),
-                              );
+                              Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GlobalReportScreen()));
                             },
                           ),
                           if (selectedGrade != null) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             Text(
                               'Current grade: $selectedGrade',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
+                              style: const TextStyle(color: _C.textMuted, fontSize: 13, fontWeight: FontWeight.w600),
                               textAlign: TextAlign.start,
                             ),
                           ],
@@ -439,182 +438,123 @@ class ProfileDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Card(
-                    elevation: 0,
-                    color: colorScheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _C.cardBg,
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: colorScheme.outlineVariant),
+                      border: Border.all(color: _C.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x04000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        )
+                      ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        16,
-                        16,
-                        16,
-                        16,
-                      ),
+                      padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _PlanRow(
                             isFree: isFree,
-                            planLabel:
-                                planAsync.valueOrNull?.label ?? 'Beginner',
+                            planLabel: planAsync.valueOrNull?.label ?? 'Beginner',
                           ),
-                          const SizedBox(height: 12),
-                          Material(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(18),
+                          const SizedBox(height: 16),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: _C.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: _C.border),
+                            ),
                             child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              contentPadding:
-                                  const EdgeInsetsDirectional.fromSTEB(
-                                16,
-                                4,
-                                12,
-                                4,
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               leading: Container(
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFEAF6FB),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  Icons.self_improvement_outlined,
-                                  color: Color(0xFF2A6F97),
-                                ),
+                                child: const Icon(Icons.self_improvement_outlined, color: Color(0xFF2A6F97)),
                               ),
-                              title:
-                                  const Text('Wellbeing and Stress Management'),
-                              subtitle: Text(
-                                'Breathing exercise and proven stress tips',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
+                              title: const Text('Wellbeing and Stress Management', style: TextStyle(fontWeight: FontWeight.w600, color: _C.textPrimary, fontSize: 14)),
+                              subtitle: const Text('Breathing exercise and proven stress tips', style: TextStyle(color: _C.textMuted, fontSize: 13)),
+                              trailing: const Icon(Icons.chevron_right, color: _C.textMuted),
                               onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const WellbeingStressScreen(),
-                                  ),
-                                );
+                                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const WellbeingStressScreen()));
                               },
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Material(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(18),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: _C.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: _C.border),
+                            ),
                             child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              contentPadding:
-                                  const EdgeInsetsDirectional.fromSTEB(
-                                16,
-                                4,
-                                12,
-                                4,
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               leading: Container(
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEAF3FF),
+                                  color: _C.primaryLight,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  Icons.settings_outlined,
-                                  color: Color(0xFF0F4C81),
-                                ),
+                                child: const Icon(Icons.settings_outlined, color: _C.primary),
                               ),
-                              title: const Text('Settings'),
-                              subtitle: Text(
-                                'Manage app preferences and exam options',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
+                              title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600, color: _C.textPrimary, fontSize: 14)),
+                              subtitle: const Text('Manage app preferences and exam options', style: TextStyle(color: _C.textMuted, fontSize: 13)),
+                              trailing: const Icon(Icons.chevron_right, color: _C.textMuted),
                               onTap: () {},
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 24),
                           OutlinedButton.icon(
                             onPressed: actionState.isLoading
                                 ? null
                                 : () async {
-                                    final success = await ref
-                                        .read(authControllerProvider.notifier)
-                                        .signOut();
+                                    final success = await ref.read(authControllerProvider.notifier).signOut();
+                                    if (!context.mounted || !success) return;
 
-                                    if (!context.mounted || !success) {
-                                      return;
-                                    }
+                                    ref.read(pendingPlanProvider.notifier).state = null;
+                                    ref.read(dashboardStudyModeProvider.notifier).state = DashboardStudyMode.practice;
+                                    ref.read(gradeDialogShownProvider.notifier).state = <String>{};
 
-                                    ref
-                                        .read(pendingPlanProvider.notifier)
-                                        .state = null;
-                                    ref
-                                        .read(
-                                            dashboardStudyModeProvider.notifier)
-                                        .state = DashboardStudyMode.practice;
-                                    ref
-                                        .read(gradeDialogShownProvider.notifier)
-                                        .state = <String>{};
-
-                                    ref.invalidate(
-                                        subscriptionsControllerProvider);
+                                    ref.invalidate(subscriptionsControllerProvider);
                                     ref.invalidate(userPlanProvider);
                                     ref.invalidate(userProfileStreamProvider);
                                     ref.invalidate(userGradeProvider);
-                                    ref.invalidate(
-                                        gradeSelectionControllerProvider);
-                                    ref.invalidate(
-                                        adaptivePracticeControllerProvider);
+                                    ref.invalidate(gradeSelectionControllerProvider);
+                                    ref.invalidate(adaptivePracticeControllerProvider);
 
-                                    Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => const WelcomeScreen(),
-                                      ),
-                                      (route) => false,
-                                    );
+                                    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => const WelcomeScreen()), (route) => false);
                                   },
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size.fromHeight(52),
-                              side: BorderSide(color: colorScheme.outline),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
+                              side: const BorderSide(color: _C.border),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              foregroundColor: _C.textPrimary,
                             ),
                             icon: actionState.isLoading
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.primary,
-                                      ),
-                                    ),
+                                ? const SizedBox(
+                                    height: 20, width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_C.primary)),
                                   )
-                                : const Icon(Icons.logout_outlined),
+                                : const Icon(Icons.logout_outlined, size: 20),
                             label: Text(
-                              actionState.isLoading
-                                  ? 'Signing out...'
-                                  : 'Logout',
+                              actionState.isLoading ? 'Signing out...' : 'Logout',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ),
                           if (actionState.errorMessage != null) ...[
                             const SizedBox(height: 12),
                             Text(
                               actionState.errorMessage!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: colorScheme.error),
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1024,14 +964,24 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: colorScheme.primaryContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A6BFF), Color(0xFF0F4C81)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x331A6BFF),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          )
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 20),
+        padding: const EdgeInsets.all(28),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1039,38 +989,39 @@ class _ProfileHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Welcome back, Student!',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Your latest progress and learning shortcuts are ready.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer.withValues(
-                            alpha: 0.82,
-                          ),
-                        ),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Container(
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: colorScheme.surface,
+                color: Colors.white.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
-                border: Border.all(color: colorScheme.outlineVariant),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.person_outline,
                 size: 34,
-                color: colorScheme.primary,
+                color: Colors.white,
               ),
             ),
           ],
@@ -1098,53 +1049,87 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
+    return Container(
+      decoration: BoxDecoration(
+        color: _C.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _C.border.withValues(alpha: 0.6)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          )
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: accentColor),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: -15,
+            bottom: -15,
+            child: Icon(
+              icon,
+              size: 100,
+              color: accentColor.withValues(alpha: 0.05),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: accentColor.withValues(alpha: 0.82),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        accentColor.withValues(alpha: 0.15),
+                        accentColor.withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Icon(icon, color: accentColor, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          color: _C.textPrimary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: _C.textMuted,
                           fontWeight: FontWeight.w600,
                         ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: accentColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1157,16 +1142,22 @@ class _BookmarkStatCard extends StatelessWidget {
 
   final String value;
 
-  static const _accentColor = Color(0xFFB36B00);
-  static const _backgroundColor = Color(0xFFFFF4E5);
+  static const _accentColor = Color(0xFFF59E0B);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: _backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
+    return Container(
+      decoration: BoxDecoration(
+        color: _C.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _C.border.withValues(alpha: 0.6)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          )
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1177,53 +1168,78 @@ class _BookmarkStatCard extends StatelessWidget {
             ),
           );
         },
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.bookmark_rounded, color: _accentColor),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -15,
+              bottom: -15,
+              child: Icon(
+                Icons.bookmark_rounded,
+                size: 100,
+                color: _accentColor.withValues(alpha: 0.05),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Saved Questions',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: _accentColor.withValues(alpha: 0.82),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          _accentColor.withValues(alpha: 0.15),
+                          _accentColor.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _accentColor.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: const Icon(Icons.bookmark_rounded, color: _accentColor, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            color: _C.textPrimary,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Saved Questions',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: _C.textMuted,
                             fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      value,
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: _accentColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: _C.textMuted.withValues(alpha: 0.5),
+                  ),
+                ],
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: _accentColor.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1247,62 +1263,61 @@ class _ExamModeActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: colorScheme.primaryContainer.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(18),
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected ? _C.primaryLight : _C.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSelected ? _C.primary : _C.border,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsetsDirectional.fromSTEB(18, 18, 18, 18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: colorScheme.primary.withValues(alpha: 0.35),
-              width: 1.2,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
               Container(
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary,
+                  color: isSelected ? _C.primary : _C.bg,
                   borderRadius: BorderRadius.circular(14),
+                  border: isSelected ? null : Border.all(color: _C.border),
                 ),
-                child: Icon(icon, color: colorScheme.onPrimary),
+                child: Icon(icon, color: isSelected ? Colors.white : _C.primary),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? _C.primary : _C.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _C.textMuted,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Icon(
                 isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
+                color: isSelected ? _C.primary : _C.textMuted,
               ),
             ],
           ),

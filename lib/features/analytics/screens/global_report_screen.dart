@@ -10,6 +10,19 @@ import '../../practice/services/ai_tutor_service.dart';
 import '../models/global_mistake.dart';
 import '../repositories/global_analytics_service.dart';
 
+// ─── Colors ────────────────────────────────────────────────────────────────
+class _C {
+  static const primary       = Color(0xFF1A6BFF);
+  static const primaryLight  = Color(0xFFE8F0FF);
+  static const bg            = Color(0xFFFFFFFF);
+  static const surface       = Color(0xFFF7F8FC);
+  static const textPrimary   = Color(0xFF1A1A2E);
+  static const textMuted     = Color(0xFF6B7280);
+  static const border        = Color(0xFFE0E0E0);
+  static const cardBg        = Color(0xFFFFFFFF);
+  static const dark          = Color(0xFF1A1A2E);
+}
+
 class GlobalReportScreen extends ConsumerStatefulWidget {
   const GlobalReportScreen({super.key});
 
@@ -185,56 +198,87 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return SecurityOverlay(
       child: SecureShortcutBlocker(
         child: Scaffold(
+          backgroundColor: _C.surface,
           appBar: AppBar(
-            title: const Text('Common Mistakes (All Students)'),
+            title: const Text(
+              'Global Mistakes',
+              style: TextStyle(
+                color: _C.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: _C.bg,
+            elevation: 0,
+            centerTitle: true,
+            iconTheme: const IconThemeData(color: _C.textPrimary),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(color: _C.border, height: 1),
+            ),
           ),
           body: SafeArea(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: _C.primary))
                 : _errorMessage != null
                     ? Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Text(
                             _errorMessage!,
-                            style: theme.textTheme.bodyLarge,
+                            style: const TextStyle(color: Colors.red, fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       )
                     : RefreshIndicator(
                         onRefresh: _loadData,
+                        color: _C.primary,
                         child: SecureContentWrapper(
                           child: ListView(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                             children: [
-                              Text(
-                                'See what students are getting wrong the most across the entire platform.',
-                                style: theme.textTheme.bodyLarge,
+                              const Text(
+                                'Global Difficulty Insights',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: _C.textPrimary,
+                                ),
                               ),
-                              const SizedBox(height: 14),
-                              _buildSubjectFilterChips(colorScheme),
-                              const SizedBox(height: 14),
-                              _buildPaywallCard(colorScheme),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'See what students are getting wrong the most across the entire platform. Learn from common pitfalls.',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: _C.textMuted,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _buildSubjectFilterChips(),
+                              const SizedBox(height: 24),
+                              _buildPaywallCard(),
+                              const SizedBox(height: 24),
                               ..._buildMistakeCards(
-                                colorScheme: colorScheme,
                                 mistakes: _filteredMistakes,
                                 locked: !_hasPurchased,
                               ),
                               if (_filteredMistakes.isEmpty)
-                                Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(14),
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: _C.cardBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: _C.border),
+                                  ),
+                                  child: const Center(
                                     child: Text(
                                       'No global mistakes found for this subject yet.',
-                                      style: theme.textTheme.bodyMedium,
+                                      style: TextStyle(fontSize: 15, color: _C.textMuted),
                                     ),
                                   ),
                                 ),
@@ -259,7 +303,7 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
         .toList(growable: false);
   }
 
-  Widget _buildSubjectFilterChips(ColorScheme colorScheme) {
+  Widget _buildSubjectFilterChips() {
     final subjects = <String>{'All'};
     for (final mistake in _allMistakes) {
       if (mistake.subject.trim().isNotEmpty) {
@@ -272,75 +316,112 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
       sorted.insert(0, 'All');
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: sorted
-          .map(
-            (subject) => ChoiceChip(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: sorted.map((subject) {
+          final isSelected = _selectedSubject == subject;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
               label: Text(subject),
-              selected: _selectedSubject == subject,
+              selected: isSelected,
               onSelected: (_) {
                 setState(() {
                   _selectedSubject = subject;
                 });
               },
-              selectedColor: colorScheme.primaryContainer,
+              backgroundColor: _C.bg,
+              selectedColor: _C.primaryLight,
+              labelStyle: TextStyle(
+                color: isSelected ? _C.primary : _C.textMuted,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: isSelected ? _C.primary : _C.border,
+                width: 1,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
-          )
-          .toList(growable: false),
+          );
+        }).toList(),
+      ),
     );
   }
 
-  Widget _buildPaywallCard(ColorScheme colorScheme) {
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHighest,
+  Widget _buildPaywallCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _hasPurchased ? _C.primaryLight : const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _hasPurchased ? _C.primary : const Color(0xFFF97316),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.workspace_premium_outlined),
-                const SizedBox(width: 8),
-                Text(
-                  _hasPurchased
-                      ? 'Full Global Report Unlocked'
-                      : 'Purchase Full Report',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                Icon(
+                  Icons.workspace_premium_outlined,
+                  color: _hasPurchased ? _C.primary : const Color(0xFFF97316),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _hasPurchased ? 'Full Global Report Unlocked' : 'Purchase Full Report',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _hasPurchased ? _C.primary : const Color(0xFFC2410C),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               _hasPurchased
                   ? 'You can now view every high-failure question and use AI Tutor for each one.'
                   : 'Free users can only see a locked Top 5 preview. Unlock all insights for the full national difficulty report.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed:
-                  _hasPurchased || _isPurchasing ? null : _purchaseReport,
-              icon: _isPurchasing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(_hasPurchased ? Icons.check_rounded : Icons.lock_open),
-              label: Text(
-                _hasPurchased
-                    ? 'Purchased'
-                    : (_isPurchasing
-                        ? 'Processing...'
-                        : 'Purchase Full Report'),
+              style: TextStyle(
+                fontSize: 14,
+                color: _hasPurchased ? _C.textPrimary : const Color(0xFF9A3412),
+                height: 1.5,
               ),
             ),
+            const SizedBox(height: 16),
+            if (!_hasPurchased)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isPurchasing ? null : _purchaseReport,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: _isPurchasing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.lock_open, size: 20),
+                  label: Text(
+                    _isPurchasing ? 'Processing...' : 'Unlock Full Report',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -348,7 +429,6 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
   }
 
   List<Widget> _buildMistakeCards({
-    required ColorScheme colorScheme,
     required List<GlobalMistake> mistakes,
     required bool locked,
   }) {
@@ -360,90 +440,161 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
       final aiExplanation = _aiByQuestionId[mistake.questionId];
       final isLoadingAi = _loadingAiQuestionId == mistake.questionId;
 
-      final card = Card(
-        elevation: 0,
+      final card = Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: _C.cardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _C.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x04000000),
+              blurRadius: 16,
+              offset: Offset(0, 4),
+            )
+          ],
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _C.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
                       mistake.subject,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _C.primary,
+                      ),
                     ),
                   ),
-                  Text(
-                    '${mistake.failureRate.toStringAsFixed(1)}% fail',
-                    style: TextStyle(
-                      color: colorScheme.error,
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${mistake.failureRate.toStringAsFixed(1)}% fail',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFDC2626),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Attempts: ${mistake.totalAttempts}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
               Text(
                 mistake.questionText,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: _C.textPrimary,
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Correct answer: ${mistake.correctAnswer.isEmpty ? '--' : mistake.correctAnswer}',
-                style: Theme.of(context).textTheme.bodyMedium,
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _C.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _C.border),
+                ),
+                child: Column(
+                  children: [
+                    _buildAnswerRow(
+                      icon: Icons.check_circle,
+                      iconColor: const Color(0xFF10B981),
+                      label: 'Correct answer',
+                      value: mistake.correctAnswer.isEmpty ? '--' : mistake.correctAnswer,
+                    ),
+                    const Divider(height: 24, color: _C.border),
+                    _buildAnswerRow(
+                      icon: Icons.cancel,
+                      iconColor: const Color(0xFFEF4444),
+                      label: 'Common wrong answer',
+                      value: mistake.popularWrongAnswer.isEmpty ? '--' : mistake.popularWrongAnswer,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Most common wrong answer: ${mistake.popularWrongAnswer.isEmpty ? '--' : mistake.popularWrongAnswer}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                mistake.staticExplanation.isEmpty
-                    ? 'No explanation available.'
-                    : mistake.staticExplanation,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              FilledButton.tonalIcon(
-                onPressed: !mistake.hasAiInputs || isLoadingAi
-                    ? null
-                    : () => _explainWithAi(mistake),
-                icon: isLoadingAi
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome),
-                label: Text(isLoadingAi ? 'Generating...' : 'Explain with AI'),
+              const SizedBox(height: 16),
+              if (mistake.staticExplanation.isNotEmpty) ...[
+                const Text(
+                  'Explanation:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _C.textPrimary),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  mistake.staticExplanation,
+                  style: const TextStyle(fontSize: 14, color: _C.textMuted, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: !mistake.hasAiInputs || isLoadingAi ? null : () => _explainWithAi(mistake),
+                  icon: isLoadingAi
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: _C.primary),
+                        )
+                      : const Icon(Icons.auto_awesome, size: 20),
+                  label: Text(
+                    isLoadingAi ? 'Generating...' : 'Explain with AI',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _C.primary,
+                    side: const BorderSide(color: _C.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ),
               if (aiExplanation != null && aiExplanation.trim().isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.4),
-                    border: Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.25),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    color: _C.primaryLight.withValues(alpha: 0.5),
+                    border: Border.all(color: _C.primaryLight),
                   ),
-                  child: Text(
-                    aiExplanation,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: _C.primary, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'AI Tutor Explanation',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _C.primary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        aiExplanation,
+                        style: const TextStyle(fontSize: 14, color: _C.textPrimary, height: 1.6),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -461,11 +612,11 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
           card,
           Positioned.fill(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: _C.surface.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -473,22 +624,25 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
           Positioned.fill(
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(999),
+                  color: _C.dark,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 4)),
+                  ],
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.lock_outline, color: Colors.white, size: 18),
-                    SizedBox(width: 6),
+                    Icon(Icons.lock_outline, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
                     Text(
                       'Locked Preview',
                       style: TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -499,5 +653,36 @@ class _GlobalReportScreenState extends ConsumerState<GlobalReportScreen> {
         ],
       );
     }).toList(growable: false);
+  }
+
+  Widget _buildAnswerRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 13, color: _C.textMuted),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _C.textPrimary),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
