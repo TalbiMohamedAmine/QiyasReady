@@ -3,6 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/leaderboard_service.dart';
 
+// --- Colors & Aesthetics from WelcomeScreen ---
+class _C {
+  static const primary       = Color(0xFF1A6BFF);
+  static const primaryLight  = Color(0xFFE8F0FF);
+  static const bg            = Color(0xFFFFFFFF);
+  static const surface       = Color(0xFFF7F8FC);
+  static const textPrimary   = Color(0xFF1A1A2E);
+  static const textMuted     = Color(0xFF6B7280);
+  static const border        = Color(0xFFE0E0E0);
+  static const cardBg        = Color(0xFFFFFFFF);
+}
+
 class LeaderboardScreen extends ConsumerWidget {
   const LeaderboardScreen({super.key});
 
@@ -10,19 +22,47 @@ class LeaderboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final top50Async = ref.watch(top50LeaderboardProvider);
     final currentUserRankAsync = ref.watch(currentUserRankProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: _C.bg,
       appBar: AppBar(
-        title: const Text('Global Leaderboard'),
+        title: const Text(
+          'Global Leaderboard',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _C.textPrimary,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: _C.bg,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _C.textPrimary),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: _C.border,
+            height: 1.0,
+          ),
+        ),
       ),
       body: top50Async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error loading leaderboard: $err')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: _C.primary),
+        ),
+        error: (err, _) => Center(
+          child: Text(
+            'Error loading leaderboard: $err',
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+        ),
         data: (entries) {
           if (entries.isEmpty) {
-            return const Center(child: Text('No practice data available yet.'));
+            return const Center(
+              child: Text(
+                'No practice data available yet.',
+                style: TextStyle(color: _C.textMuted),
+              ),
+            );
           }
 
           final top3 = entries.take(3).toList();
@@ -34,9 +74,13 @@ class LeaderboardScreen extends ConsumerWidget {
               CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 32, 16, 40),
-                      child: _PodiumWidget(top3: top3),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Container(
+                        color: _C.surface,
+                        padding: const EdgeInsets.fromLTRB(16, 32, 16, 48),
+                        child: _PodiumWidget(top3: top3),
+                      ),
                     ),
                   ),
                   SliverList(
@@ -50,7 +94,7 @@ class LeaderboardScreen extends ConsumerWidget {
                   ),
                   // Padding at the bottom to avoid overlap with sticky bar
                   const SliverToBoxAdapter(
-                    child: SizedBox(height: 100),
+                    child: SizedBox(height: 120),
                   ),
                 ],
               ),
@@ -84,7 +128,6 @@ class _PodiumWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If less than 3, we still draw what we can, but a full podium expects 3.
     final first = top3.isNotEmpty ? top3[0] : null;
     final second = top3.length > 1 ? top3[1] : null;
     final third = top3.length > 2 ? top3[2] : null;
@@ -97,29 +140,30 @@ class _PodiumWidget extends StatelessWidget {
           Expanded(
             child: _PodiumItem(
               entry: second,
-              color: Colors.grey.shade300, // Silver
-              glowColor: Colors.grey.shade400,
+              color: const Color(0xFF9CA3AF), // Silver gray
               height: 140,
               icon: '🥈',
             ),
           ),
         if (first != null)
           Expanded(
-            child: _PodiumItem(
-              entry: first,
-              color: const Color(0xFFFFD700), // Gold
-              glowColor: const Color(0x66FFD700),
-              height: 190,
-              icon: '🥇',
-              isFirst: true,
+            flex: 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _PodiumItem(
+                entry: first,
+                color: const Color(0xFFF59E0B), // Gold / Amber
+                height: 180,
+                icon: '👑',
+                isFirst: true,
+              ),
             ),
           ),
         if (third != null)
           Expanded(
             child: _PodiumItem(
               entry: third,
-              color: const Color(0xFFCD7F32), // Bronze
-              glowColor: const Color(0x66CD7F32),
+              color: const Color(0xFFD97706), // Bronze
               height: 110,
               icon: '🥉',
             ),
@@ -133,7 +177,6 @@ class _PodiumItem extends StatelessWidget {
   const _PodiumItem({
     required this.entry,
     required this.color,
-    required this.glowColor,
     required this.height,
     required this.icon,
     this.isFirst = false,
@@ -141,64 +184,97 @@ class _PodiumItem extends StatelessWidget {
 
   final LeaderboardEntry entry;
   final Color color;
-  final Color glowColor;
   final double height;
   final String icon;
   final bool isFirst;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
-          icon,
-          style: TextStyle(fontSize: isFirst ? 42 : 32),
+        // Avatar
+        Container(
+          padding: EdgeInsets.all(isFirst ? 4 : 2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: isFirst ? 3 : 2),
+          ),
+          child: CircleAvatar(
+            radius: isFirst ? 32 : 24,
+            backgroundColor: _C.primaryLight,
+            child: Text(
+              entry.name.isNotEmpty ? entry.name[0].toUpperCase() : '?',
+              style: TextStyle(
+                color: _C.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: isFirst ? 24 : 18,
+              ),
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        // Name
         Text(
           entry.name,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
+          style: TextStyle(
+            color: _C.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: isFirst ? 16 : 14,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 4),
-        Text(
-          '${entry.score}',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          height: height,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            boxShadow: [
-              BoxShadow(
-                color: glowColor,
-                blurRadius: 20,
-                spreadRadius: 2,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              '${entry.rank}',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: Colors.white.withOpacity(0.8),
+        // Score & Fire
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${entry.score}',
+              style: TextStyle(
+                color: _C.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: isFirst ? 16 : 14,
               ),
             ),
+            if (entry.score > 50)
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Text('🔥', style: TextStyle(fontSize: 14)),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Podium Block
+        Container(
+          height: height,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            border: Border.all(color: color, width: 2), // UNIFORM BORDER FIX
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              Text(
+                icon,
+                style: TextStyle(fontSize: isFirst ? 36 : 28),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${entry.rank}',
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: isFirst ? 42 : 32,
+                  height: 1.0,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -213,64 +289,77 @@ class _LeaderboardListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isCurrentUser = entry.isCurrentUser;
+    final bgColor = isCurrentUser ? _C.primaryLight : _C.cardBg;
+    final borderColor = isCurrentUser ? _C.primary : _C.border;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: entry.isCurrentUser
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.surface,
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        border: Border.all(color: borderColor, width: isCurrentUser ? 1.5 : 1),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+            color: Color(0x08000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          )
         ],
       ),
       child: Row(
         children: [
+          // Rank Number
           SizedBox(
             width: 40,
             child: Text(
               '${entry.rank}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurfaceVariant,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                color: isCurrentUser ? _C.primary : _C.textMuted,
               ),
             ),
           ),
+          // Avatar
           CircleAvatar(
             radius: 20,
-            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+            backgroundColor: isCurrentUser ? Colors.white : _C.surface,
             child: Text(
               entry.name.isNotEmpty ? entry.name[0].toUpperCase() : '?',
               style: TextStyle(
-                color: theme.colorScheme.primary,
+                color: _C.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           const SizedBox(width: 16),
+          // Name
           Expanded(
             child: Text(
               entry.name,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight:
-                    entry.isCurrentUser ? FontWeight.bold : FontWeight.normal,
+              style: TextStyle(
+                fontSize: 15,
+                color: _C.textPrimary,
+                fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.w500,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          // Score & Fire Emoji
+          if (entry.score > 50)
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Text('🔥', style: TextStyle(fontSize: 16)),
+            ),
           Text(
             '${entry.score} pts',
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
+              color: isCurrentUser ? _C.primary : _C.textPrimary,
             ),
           ),
         ],
@@ -286,23 +375,21 @@ class _StickyBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
-        top: 16,
-        bottom: 16 + MediaQuery.paddingOf(context).bottom,
+        top: 20,
+        bottom: 20 + MediaQuery.paddingOf(context).bottom,
       ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: const BoxDecoration(
+        color: _C.primary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Color(0x331A6BFF),
+            blurRadius: 32,
+            offset: Offset(0, -8),
           ),
         ],
       ),
@@ -312,17 +399,21 @@ class _StickyBottomBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'My Rank',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 '#${entry.rank}',
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: const TextStyle(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onPrimary,
+                  color: Colors.white,
+                  height: 1.2,
                 ),
               ),
             ],
@@ -332,18 +423,31 @@ class _StickyBottomBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'Questions Answered',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                '${entry.score}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onPrimary,
-                ),
+              Row(
+                children: [
+                  if (entry.score > 50)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 6),
+                      child: Text('🔥', style: TextStyle(fontSize: 18)),
+                    ),
+                  Text(
+                    '${entry.score}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

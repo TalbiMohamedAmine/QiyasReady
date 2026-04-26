@@ -4,6 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/notification_service.dart';
 import '../services/goal_service.dart';
 
+// --- Colors & Aesthetics from WelcomeScreen ---
+class _C {
+  static const primary       = Color(0xFF1A6BFF);
+  static const primaryLight  = Color(0xFFE8F0FF);
+  static const bg            = Color(0xFFFFFFFF);
+  static const surface       = Color(0xFFF7F8FC);
+  static const textPrimary   = Color(0xFF1A1A2E);
+  static const textMuted     = Color(0xFF6B7280);
+  static const border        = Color(0xFFE0E0E0);
+  static const cardBg        = Color(0xFFFFFFFF);
+}
+
 class GoalSettingScreen extends ConsumerStatefulWidget {
   const GoalSettingScreen({super.key});
 
@@ -20,7 +32,6 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
   @override
   void initState() {
     super.initState();
-    // Load existing goal if available (optional enhancement)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentGoal = ref.read(currentGoalProvider).value;
       if (currentGoal != null) {
@@ -43,6 +54,18 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
     final time = await showTimePicker(
       context: context,
       initialTime: _reminderTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _C.primary,
+              onPrimary: Colors.white,
+              onSurface: _C.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (time != null) {
       setState(() {
@@ -67,13 +90,12 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
 
       await ref.read(goalServiceProvider).saveGoal(newGoal);
 
-      // Request notification permissions
       final hasPermission =
           await NotificationService.instance.requestPermission();
 
       if (hasPermission) {
         await NotificationService.instance.scheduleReminder(
-          id: 1, // Static ID for the single study reminder
+          id: 1,
           title: 'Study Time!',
           body:
               'Time to complete your $_selectedType goal of ${_targetQuestions.toInt()} questions.',
@@ -84,9 +106,16 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Goal saved and reminder scheduled successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text(
+              'Goal saved and reminder scheduled successfully!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: const Color(0xFF10B981), // Success green from Welcome screen features
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -95,8 +124,15 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save goal: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to save goal: $e',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: const Color(0xFFEF4444), // Error red
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -109,38 +145,78 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
+      backgroundColor: _C.bg,
       appBar: AppBar(
-        title: const Text('Study Goals'),
+        title: const Text(
+          'Study Goals',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _C.textPrimary,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: _C.bg,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _C.textPrimary),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: _C.border,
+            height: 1.0,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            const Text(
               'Set Your Targets',
-              style: theme.textTheme.headlineSmall?.copyWith(
+              style: TextStyle(
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: _C.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 8),
+            const Text(
+              'Consistency is key. Schedule your study sessions below.',
+              style: TextStyle(
+                fontSize: 14,
+                color: _C.textMuted,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 48),
 
             // Goal Type Section
-            Text(
+            const Text(
               'Goal Frequency',
-              style: theme.textTheme.titleMedium,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: _C.textPrimary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'Daily', label: Text('Daily')),
-                ButtonSegment(value: 'Weekly', label: Text('Weekly')),
-                ButtonSegment(value: 'Monthly', label: Text('Monthly')),
+                ButtonSegment(
+                  value: 'Daily',
+                  label: Text('Daily', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                ButtonSegment(
+                  value: 'Weekly',
+                  label: Text('Weekly', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                ButtonSegment(
+                  value: 'Monthly',
+                  label: Text('Monthly', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
               ],
               selected: {_selectedType},
               onSelectionChanged: (Set<String> newSelection) {
@@ -148,83 +224,153 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
                   _selectedType = newSelection.first;
                 });
               },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return _C.primaryLight;
+                  }
+                  return Colors.white;
+                }),
+                foregroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return _C.primary;
+                  }
+                  return _C.textPrimary;
+                }),
+                side: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return const BorderSide(color: _C.primary, width: 1.5);
+                  }
+                  return const BorderSide(color: _C.border, width: 1);
+                }),
+              ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
 
             // Target Questions Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   'Target Questions',
-                  style: theme.textTheme.titleMedium,
-                ),
-                Text(
-                  '${_targetQuestions.toInt()}',
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                    color: _C.textPrimary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _C.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_targetQuestions.toInt()}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _C.primary,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Slider(
-              value: _targetQuestions,
-              min: 5,
-              max: 100,
-              divisions: 19, // (100-5)/5 = 19
-              label: _targetQuestions.round().toString(),
-              onChanged: (double value) {
-                setState(() {
-                  _targetQuestions = value;
-                });
-              },
+            const SizedBox(height: 16),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: _C.primary,
+                inactiveTrackColor: _C.border,
+                thumbColor: _C.primary,
+                overlayColor: _C.primaryLight,
+                valueIndicatorTextStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              child: Slider(
+                value: _targetQuestions,
+                min: 5,
+                max: 100,
+                divisions: 19,
+                label: _targetQuestions.round().toString(),
+                onChanged: (double value) {
+                  setState(() {
+                    _targetQuestions = value;
+                  });
+                },
+              ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
 
             // Reminder Time Section
-            Text(
+            const Text(
               'Reminder Time',
-              style: theme.textTheme.titleMedium,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: _C.textPrimary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             InkWell(
               onTap: _pickTime,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   vertical: 16.0,
                   horizontal: 20.0,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _C.cardBg,
+                  border: Border.all(color: _C.border),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x08000000), blurRadius: 16)
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _reminderTime.format(context),
-                      style: theme.textTheme.titleLarge,
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.notifications_active_outlined,
+                          color: _C.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          _reminderTime.format(context),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: _C.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.access_time,
-                      color: theme.colorScheme.primary,
+                    const Icon(
+                      Icons.edit_outlined,
+                      color: _C.textMuted,
+                      size: 20,
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 64),
 
             // Save Button
-            FilledButton(
+            ElevatedButton(
               onPressed: _isLoading ? null : _saveGoal,
-              style: FilledButton.styleFrom(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _C.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: _isLoading
@@ -238,9 +384,13 @@ class _GoalSettingScreenState extends ConsumerState<GoalSettingScreen> {
                     )
                   : const Text(
                       'Save Goal & Enable Reminder',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
