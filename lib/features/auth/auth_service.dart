@@ -62,6 +62,18 @@ class AuthService {
     }
   }
 
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw _mapFirebaseAuthException(e);
+    } catch (_) {
+      throw const AuthFailure(
+        'Unable to send password reset email. Please try again.',
+      );
+    }
+  }
+
   Future<UserCredential?> signInWithGoogle() async {
     if (kIsWeb) {
       try {

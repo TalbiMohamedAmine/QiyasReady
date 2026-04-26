@@ -103,6 +103,24 @@ class AuthController extends StateNotifier<AuthActionState> {
     }
   }
 
+  Future<bool> forgotPassword({required String email}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authService.sendPasswordResetEmail(email: email);
+      state = state.copyWith(isLoading: false, clearError: true);
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Could not send reset email. Please try again.',
+      );
+      return false;
+    }
+  }
+
   Future<bool> signInWithGoogle() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
