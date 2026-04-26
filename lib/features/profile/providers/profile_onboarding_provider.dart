@@ -19,7 +19,7 @@ final userGradeProvider = StreamProvider<String?>((ref) {
   return authState.when(
     data: (user) {
       if (user == null) {
-        return const Stream<String?>.value(null);
+        return Stream<String?>.value(null);
       }
 
       return firestore.collection('users').doc(user.uid).snapshots().map((doc) {
