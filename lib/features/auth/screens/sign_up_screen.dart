@@ -539,7 +539,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (success) {
       _emailController.clear();
       _passwordController.clear();
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -556,10 +558,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       return;
     }
 
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _handleLogin() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
     );

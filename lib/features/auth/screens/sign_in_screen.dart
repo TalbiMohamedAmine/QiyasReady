@@ -628,7 +628,9 @@ class _SignInScreenState extends State<SignInScreen> {
 
     _emailController.clear();
     _passwordController.clear();
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _handleGoogleSignIn(WidgetRef ref) async {
@@ -639,7 +641,9 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _handleForgotPassword(WidgetRef ref) async {
@@ -664,7 +668,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _handleSignUpNavigation() {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const SignUpScreen()),
     );
   }
