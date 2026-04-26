@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,13 +65,23 @@ class AuthController extends StateNotifier<AuthActionState> {
     }
   }
 
-  Future<bool> signUp({required String email, required String password}) async {
+  Future<bool> signUp({required String email, required String password, required String fullName}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await _authService.signUpWithEmailAndPassword(
+      final credential = await _authService.signUpWithEmailAndPassword(
         email: email,
         password: password,
       );
+      
+      final uid = credential.user?.uid;
+      if (uid != null) {
+        await FirebaseFirestore.instance.collection('users').doc(uid).set({
+          'profile': {
+            'full_name': fullName.trim(),
+          }
+        }, SetOptions(merge: true));
+      }
+      
       state = state.copyWith(isLoading: false, clearError: true);
       return true;
     } on AuthFailure catch (e) {
@@ -129,6 +140,30 @@ class AuthController extends StateNotifier<AuthActionState> {
         state = state.copyWith(isLoading: false, clearError: true);
         return false;
       }
+      
+      final user = credential.user;
+      if (user != null) {
+        final uid = user.uid;
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final data = doc.data();
+
+        String? existingName;
+        if (data != null && data['profile'] is Map) {
+           existingName = (data['profile'] as Map)['full_name'] as String?;
+        }
+
+        if (existingName == null || existingName.trim().isEmpty) {
+          final displayName = user.displayName ?? '';
+          if (displayName.isNotEmpty) {
+            await FirebaseFirestore.instance.collection('users').doc(uid).set({
+              'profile': {
+                'full_name': displayName,
+              }
+            }, SetOptions(merge: true));
+          }
+        }
+      }
+      
       state = state.copyWith(isLoading: false, clearError: true);
       return true;
     } on AuthFailure catch (e) {
