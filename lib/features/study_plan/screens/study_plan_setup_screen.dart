@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/study_plan_provider.dart';
 import '../services/study_plan_service.dart';
+import '../../subscriptions/widgets/feature_lock.dart';
 
 class StudyPlanSetupScreen extends ConsumerStatefulWidget {
   const StudyPlanSetupScreen({super.key});
@@ -97,10 +98,12 @@ class _StudyPlanSetupScreenState extends ConsumerState<StudyPlanSetupScreen> {
         title: const Text('AI Study Plan'),
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: ListView(
+        child: FeatureLock(
+          lockedText: 'Upgrade to Basic to access Goal Setting & AI Study Plans.',
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
                 Text(
@@ -234,6 +237,7 @@ class _StudyPlanSetupScreenState extends ConsumerState<StudyPlanSetupScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

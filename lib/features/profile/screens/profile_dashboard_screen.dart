@@ -19,6 +19,7 @@ import '../providers/session_history_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../../../shared/widgets/upgrade_banner.dart';
 import '../../goals/screens/goal_setting_screen.dart';
+import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../leaderboard/screens/leaderboard_screen.dart';
 
 enum DashboardStudyMode { practice, mock }
@@ -51,6 +52,9 @@ class ProfileDashboardScreen extends ConsumerWidget {
     final plan = planAsync.valueOrNull;
     final isPlanLoading = planAsync.isLoading;
     final isFree = plan?.isFree ?? true;
+
+    final mockExamCountAsync = ref.watch(mockExamCountProvider);
+    final mockExamCount = mockExamCountAsync.valueOrNull ?? 0;
 
     final totalAnswered = _readIntFromProfile(
       profileAsync.valueOrNull,
@@ -280,14 +284,18 @@ class ProfileDashboardScreen extends ConsumerWidget {
                                 );
                               }
 
+                              final displaySessions = isFree && sessions.length > 3 
+                                  ? sessions.sublist(0, 3) 
+                                  : sessions;
+
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: sessions.length,
+                                itemCount: displaySessions.length,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
-                                  final session = sessions[index];
+                                  final session = displaySessions[index];
                                   final subject = (session['subject']
                                                   as String?)
                                               ?.trim()
@@ -331,6 +339,29 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               );
                             },
                           ),
+                          if (isFree) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainer,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colorScheme.outlineVariant),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.lock_outline, size: 20, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Upgrade to see complete history and Time-Series charts.',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -385,6 +416,11 @@ class ProfileDashboardScreen extends ConsumerWidget {
                             icon: Icons.fact_check_outlined,
                             isSelected: selectedMode == DashboardStudyMode.mock,
                             onTap: () {
+                              if (isFree && mockExamCount >= 1) {
+                                UpgradeModal.show(context);
+                                return;
+                              }
+
                               if (selectedGrade == null) {
                                 ScaffoldMessenger.of(context)
                                   ..hideCurrentSnackBar()
