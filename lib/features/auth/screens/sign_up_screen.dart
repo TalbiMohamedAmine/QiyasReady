@@ -71,6 +71,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   bool _isBackHovered = false;
   bool _isLoginHovered = false;
 
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -85,6 +86,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -170,6 +172,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     const SizedBox(height: 24),
                     _buildDivider(),
                     const SizedBox(height: 20),
+                    _buildFullNameField(),
+                    const SizedBox(height: 16),
                     _buildEmailField(),
                     const SizedBox(height: 16),
                     _buildPasswordField(),
@@ -471,6 +475,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
+  Widget _buildFullNameField() {
+    return _LabeledInputField(
+      label: 'Full Name',
+      controller: _fullNameController,
+      keyboardType: TextInputType.name,
+      textInputAction: TextInputAction.next,
+      hintText: 'John Doe',
+    );
+  }
+
   Widget _buildEmailField() {
     return _LabeledInputField(
       label: 'Email',
@@ -588,6 +602,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   Future<void> _handleSignUp() async {
     final agreedToTerms = _agreedToTerms;
+    final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
@@ -596,6 +611,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       _showSnackBar(
         'Please agree to the Terms of Service to continue.',
       );
+      return;
+    }
+
+    if (fullName.isEmpty || fullName.length < 3) {
+      _showSnackBar('Full name must be at least 3 characters.');
       return;
     }
 
@@ -612,6 +632,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final success = await ref.read(authControllerProvider.notifier).signUp(
           email: email,
           password: password,
+          fullName: fullName,
         );
 
     if (!mounted || !success) return;
