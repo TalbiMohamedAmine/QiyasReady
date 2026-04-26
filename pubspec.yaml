@@ -21,8 +21,14 @@ dependencies:
   flutter_facebook_auth: ^7.1.1
   sign_in_with_apple: ^6.1.4
   crypto: ^3.0.3
-  screen_protector: ^1.5.1   
+  screen_protector: ^1.5.1
   flutter_markdown: ^0.7.6
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+  fl_chart: ^0.68.0
+  connectivity_plus: ^6.0.3
+  purchases_flutter: ^7.2.1
+  firebase_messaging: ^14.7.13
   
 dev_dependencies:
   flutter_test:
