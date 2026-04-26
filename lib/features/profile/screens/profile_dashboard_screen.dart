@@ -22,7 +22,7 @@ import '../../goals/screens/goal_setting_screen.dart';
 import '../../subscriptions/widgets/upgrade_modal.dart';
 import '../../leaderboard/screens/leaderboard_screen.dart';
 import '../../../core/security/feature_toggle_provider.dart';
-import '../../practice/screens/customized_test_screen.dart';
+import '../../offline/services/download_manager.dart';
 
 enum DashboardStudyMode { practice, mock }
 
@@ -466,24 +466,7 @@ class ProfileDashboardScreen extends ConsumerWidget {
                               );
                             },
                           ),
-                          const SizedBox(height: 12),
-                          _ExamModeActionCard(
-                            title: 'Customized Tests',
-                            description: 'Generate specific tests by chapters, difficulty, and question count.',
-                            icon: Icons.tune_rounded,
-                            onTap: () {
-                              if (!toggles.hasPurchasedReport) { // Expert check
-                                UpgradeModal.show(context);
-                                return;
-                              }
-                              
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const CustomizedTestScreen(),
-                                ),
-                              );
-                            },
-                          ),
+
                           if (selectedGrade != null) ...[
                             const SizedBox(height: 10),
                             Text(
