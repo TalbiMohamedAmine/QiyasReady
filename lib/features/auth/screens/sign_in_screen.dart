@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../providers/auth_provider.dart';
+import '../../profile/screens/profile_dashboard_screen.dart';
 import 'sign_up_screen.dart';
 
 class _SignInColors {
@@ -627,9 +628,12 @@ class _SignInScreenState extends State<SignInScreen> {
 
     _emailController.clear();
     _passwordController.clear();
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProfileDashboardScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   Future<void> _handleGoogleSignIn(WidgetRef ref) async {
@@ -640,9 +644,12 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProfileDashboardScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   Future<void> _handleForgotPassword(WidgetRef ref) async {

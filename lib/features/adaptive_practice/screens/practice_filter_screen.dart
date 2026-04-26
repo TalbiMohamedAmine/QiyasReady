@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/providers/auth_provider.dart';
+import '../../onboarding/screens/welcome_screen.dart';
+import '../../profile/providers/profile_onboarding_provider.dart';
+import '../../profile/providers/user_profile_provider.dart';
+import '../../profile/screens/profile_dashboard_screen.dart';
+import '../../subscriptions/providers/subscriptions_provider.dart';
 import '../providers/adaptive_practice_provider.dart';
 import 'practice_runner_screen.dart';
 
@@ -73,8 +78,33 @@ class _PracticeFilterScreenState extends ConsumerState<PracticeFilterScreen> {
           TextButton.icon(
             onPressed: authActionState.isLoading
                 ? null
-                : () {
-                    ref.read(authControllerProvider.notifier).signOut();
+                : () async {
+                    final success =
+                        await ref.read(authControllerProvider.notifier).signOut();
+
+                    if (!context.mounted || !success) {
+                      return;
+                    }
+
+                    ref.read(pendingPlanProvider.notifier).state = null;
+                    ref.read(dashboardStudyModeProvider.notifier).state =
+                        DashboardStudyMode.practice;
+                    ref.read(gradeDialogShownProvider.notifier).state =
+                        <String>{};
+
+                    ref.invalidate(subscriptionsControllerProvider);
+                    ref.invalidate(userPlanProvider);
+                    ref.invalidate(userProfileStreamProvider);
+                    ref.invalidate(userGradeProvider);
+                    ref.invalidate(gradeSelectionControllerProvider);
+                    ref.invalidate(adaptivePracticeControllerProvider);
+
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const WelcomeScreen(),
+                      ),
+                      (route) => false,
+                    );
                   },
             icon: authActionState.isLoading
                 ? const SizedBox(
