@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../adaptive_practice/screens/practice_filter_screen.dart';
+import '../../profile/screens/profile_dashboard_screen.dart';
 import '../providers/auth_provider.dart';
 import 'sign_in_screen.dart';
 
@@ -49,7 +49,7 @@ class AuthGate extends ConsumerWidget {
           return const SignInScreen();
         }
 
-        return const PracticeFilterScreen();
+        return const ProfileDashboardScreen();
       },
     );
   }
