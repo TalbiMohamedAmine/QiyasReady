@@ -187,7 +187,6 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                             ? null
                             : () {
                                 _askAiTutor(
-                                  context: context,
                                   questionText: question.stem,
                                   correctAnswer: correctOption.text,
                                   userAnswer: selectedOption.text,
@@ -195,17 +194,6 @@ class _PracticeRunnerScreenState extends ConsumerState<PracticeRunnerScreen> {
                                   isCorrect: isCorrect,
                                 );
                               },
-                        onAskAiTutor:
-                            isCorrect || _isLoadingAI || correctOption == null
-                                ? null
-                                : () {
-                                    _askAiTutor(
-                                      questionText: question.stem,
-                                      correctAnswer: correctOption.text,
-                                      userAnswer: selectedOption.text,
-                                      grade: state.selectedGrade,
-                                    );
-                                  },
                       ),
                     ],
                   ],

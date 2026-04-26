@@ -340,8 +340,6 @@ class ProfileDashboardScreen extends ConsumerWidget {
                           _ExamModeActionCard(
                             title: 'Mock Test',
                             description:
-                                'Simulate full test timing and pressure conditions.',
-                            icon: Icons.timer,
                                 'Simulate exam conditions with a timed run.',
                             icon: Icons.fact_check_outlined,
                             isSelected:
@@ -1075,12 +1073,14 @@ class _ExamModeActionCard extends StatelessWidget {
     required this.description,
     required this.icon,
     required this.onTap,
+    this.isSelected = false,
   });
 
   final String title;
   final String description;
   final IconData icon;
   final VoidCallback onTap;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -1136,8 +1136,6 @@ class _ExamModeActionCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Icon(
-                Icons.arrow_forward_rounded,
-                color: colorScheme.primary,
                 isSelected
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
